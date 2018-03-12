@@ -1,0 +1,27 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="ca.orienteeringbc.nfctiming.StartFragment">
+
+    <Button
+        android:id="@+id/add_new_person"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/add_new"/>
+
+    <GridLayout
+        android:id="@+id/competitor_list_grid"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:isScrollContainer="true"
+        android:numColumns="1">
+
+        <TextView android:text="@string/name" />
+        <TextView android:text="@string/category" />
+        <TextView android:text="@string/status" />
+
+    </GridLayout>
+
+</LinearLayout>

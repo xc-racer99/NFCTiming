@@ -1,0 +1,30 @@
+<resources>
+    <string name="app_name">NFC Timing</string>
+    <string name="title_home">Home</string>
+    <string name="start">Start</string>
+    <string name="finish">Finish</string>
+
+    <!-- Home Fragment Strings -->
+    <string name="club">Club</string>
+    <string name="get_clubs">Get Clubs</string>
+    <string name="update_club">Pick Club</string>
+    <string name="event">Event</string>
+    <string name="get_events">Get Events</string>
+    <string name="pick_event">Pick Event</string>
+    <string name="wjr_username">WJR Username</string>
+    <string name="wjr_pass">WJR Password</string>
+
+    <string name="username">Username</string>
+    <string name="password">Password</string>
+
+    <!-- Start List -->
+    <string name="add_new">Add New Competitor</string>
+    <string name="name">Name</string>
+    <string name="category">Category</string>
+    <string name="status">Status</string>
+    <string name="error_connect">Error Connecting</string>
+    <string name="connected">Connected</string>
+    <string name="stream_assigned">Streams Assigned</string>
+    <string name="downloading">Downloading %1$d</string>
+    <string name="success">Success</string>
+</resources>
