@@ -10,11 +10,15 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -29,17 +33,26 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
     // downloads with consecutive button clicks.
     private boolean mDownloading = false;
 
+    // A list of all clubs in WJR database
+    private List<WjrClubs> mClubList = new ArrayList<WjrClubs>();
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_home, container, false);
 
-        // Set listeners
+        // Set button listener
         Button getClubs = view.findViewById(R.id.get_clubs);
         Button getEvents = view.findViewById(R.id.get_events);
         getClubs.setOnClickListener(this);
         getEvents.setOnClickListener(this);
+
+        // Setup club spinner
+        Spinner clubSpinner = view.findViewById(R.id.club_spinner);
+        ArrayAdapter adapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_list_item_1, mClubList);
+        clubSpinner.setAdapter(adapter);
+
         return view;
     }
 
@@ -103,4 +116,18 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
         }
     }
 
+    // Private class to hold club name and WJR ID
+    private class WjrClubs {
+        String mClubName;
+        int mClubId;
+
+        WjrClubs(String club, int id) {
+            mClubName = club;
+            mClubId = id;
+        }
+
+        public int getClubId() { return mClubId; }
+
+        public String toString() { return mClubName;}
+    }
 }
