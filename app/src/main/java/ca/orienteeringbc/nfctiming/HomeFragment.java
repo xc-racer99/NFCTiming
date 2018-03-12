@@ -25,14 +25,6 @@ import java.util.List;
  * A simple {@link Fragment} subclass.
  */
 public class HomeFragment extends Fragment implements View.OnClickListener, AdapterView.OnItemSelectedListener {
-    // Keep a reference to the NetworkFragment, which owns the AsyncTask object
-    // that is used to execute network ops.
-    private NetworkFragment mNetworkFragment;
-
-    // Boolean telling us whether a download is in progress, so we don't trigger overlapping
-    // downloads with consecutive button clicks.
-    private boolean mDownloading = false;
-
     // A list of all clubs in WJR database
     private List<WjrClubs> mClubList = new ArrayList<WjrClubs>();
 
@@ -60,25 +52,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.get_clubs:
-                if (!mDownloading && mNetworkFragment == null) {
-                    mNetworkFragment = NetworkFragment.getInstance(
-                            getActivity().getSupportFragmentManager(),
-                            "https://whyjustrun.ca/iof/3.0/organization_list.xml");
-                    // Execute the async download.
-                    mNetworkFragment.startDownload();
-                    mDownloading = true;
-                }
+                // TODO
                 break;
             case R.id.get_events:
-                // TODO - Fix event link
-                if (!mDownloading && mNetworkFragment == null) {
-                    mNetworkFragment = NetworkFragment.getInstance(
-                            getActivity().getSupportFragmentManager(),
-                            "https://whyjustrun.ca/iof/3.0/events/500/entry_list.xml");
-                    // Execute the async download.
-                    mNetworkFragment.startDownload();
-                    mDownloading = true;
-                }
+                // TODO
                 break;
         }
     }
@@ -99,14 +76,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
     @Override
     public void onNothingSelected(AdapterView<?> parent) {
         // Do nothing?
-    }
-
-    public void finishDownloading() {
-        mDownloading = false;
-        if (mNetworkFragment != null) {
-            mNetworkFragment.cancelDownload();
-            mNetworkFragment = null;
-        }
     }
 
     public void addClubs() {
