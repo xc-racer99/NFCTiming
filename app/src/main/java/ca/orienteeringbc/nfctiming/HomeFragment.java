@@ -41,6 +41,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
     private List<Entry> mEventList = new ArrayList<>();
     private ArrayAdapter eventAdapter;
 
+    // Buttons
+    private Button getCompetitors;
+    private Button getEvents;
+
     // The WJR id of the chosen club and event
     private int clubId = -1;
     private int eventId = -1;
@@ -61,9 +65,12 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
 
         // Set button listener
         Button getClubs = view.findViewById(R.id.get_clubs);
-        Button getEvents = view.findViewById(R.id.get_events);
+        getEvents = view.findViewById(R.id.get_events);
+        getCompetitors = view.findViewById(R.id.get_competitors);
+
         getClubs.setOnClickListener(this);
         getEvents.setOnClickListener(this);
+        getCompetitors.setOnClickListener(this);
 
         // Setup club spinner and entries
         try {
@@ -83,6 +90,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
         if (selectedClub >= 0 && selectedClub < mClubList.size()) {
             clubId = sharedPref.getInt(SELECTED_CLUB_KEY, -1);
             clubSpinner.setSelection(selectedClub);
+            getEvents.setEnabled(true);
         }
 
         // Setup event spinner and entries
@@ -103,6 +111,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
         if (selectedEvent >= 0 && selectedEvent < mEventList.size()) {
             eventId = sharedPref.getInt(SELECTED_EVENT_KEY, -1);
             eventSpinner.setSelection(selectedEvent);
+            getCompetitors.setEnabled(true);
         }
 
         return view;
@@ -115,7 +124,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
                 new DownloadClubTask().execute("https://whyjustrun.ca/iof/3.0/organization_list.xml");
                 break;
             case R.id.get_events:
-                Log.e("ClubId", "" + clubId);
+                Log.d("ClubId", "" + clubId);
                 if (clubId > 0) {
                     Calendar temp = Calendar.getInstance();
                     long now = temp.getTimeInMillis() / 1000;
@@ -125,6 +134,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
                     String url = "https://whyjustrun.ca/events.xml?iof_version=3.0&start=" + start + "&end=" + end + "&club_id=" + clubId;
                     new DownloadEventTask().execute(url);
                 }
+                break;
+            case R.id.get_competitors:
+                // TODO - Download event xml and save in DB
                 break;
         }
     }
@@ -137,10 +149,12 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
             case R.id.club_spinner:
                 clubId = mClubList.get(position).getId();
                 editor.putInt(SELECTED_CLUB_KEY, clubId);
+                getEvents.setEnabled(true);
                 break;
             case R.id.event_spinner:
                 eventId = mEventList.get(position).getId();
                 editor.putInt(SELECTED_EVENT_KEY, eventId);
+                getCompetitors.setEnabled(true);
                 break;
         }
         editor.apply();
@@ -154,10 +168,13 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
             case R.id.club_spinner:
                 clubId = -1;
                 editor.putInt(SELECTED_CLUB_KEY, -1);
+                getEvents.setEnabled(false);
                 break;
             case R.id.event_spinner:
                 eventId = -1;
                 editor.putInt(SELECTED_EVENT_KEY, -1);
+                getCompetitors.setEnabled(false);
+                break;
         }
         editor.apply();
     }
@@ -190,6 +207,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
                 clubAdapter.clear();
                 clubAdapter.addAll(entries);
                 clubAdapter.notifyDataSetChanged();
+
+                getEvents.setEnabled(true);
+
                 int pos = findPositionById(mClubList, clubId);
                 if (pos >= 0) {
                     clubSpinner.setSelection(pos);
@@ -236,10 +256,12 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
 
     private void updateEventId() {
         int pos = findPositionById(mEventList, eventId);
-        if (pos >= 0)
+        if (pos >= 0) {
             eventSpinner.setSelection(pos);
-        else {
+            getCompetitors.setEnabled(true);
+        } else {
             eventSpinner.setSelection(0);
+            getCompetitors.setEnabled(false);
             SharedPreferences.Editor editor = sharedPref.edit();
             editor.putInt(SELECTED_EVENT_KEY, -1);
             editor.apply();

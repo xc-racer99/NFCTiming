@@ -27,21 +27,19 @@
     <EditText
         android:id="@+id/wjr_user"
         android:layout_width="110sp"
-        android:hint="@string/username"
+        android:hint="@string/wjr_username"
         android:inputType="text"/>
 
     <TextView
-        android:layout_width="wrap_content"
         android:orientation="horizontal"
         android:layout_column="0"
         android:layout_row="3"
-
         android:text="@string/wjr_pass"/>
 
     <EditText
         android:id="@+id/wjr_pass"
         android:layout_width="110sp"
-        android:hint="@string/password"
+        android:hint="@string/wjr_pass"
         android:inputType="textPassword"/>
 
     <TextView
@@ -72,5 +70,15 @@
 
     <Button
         android:id="@+id/get_events"
-        android:text="@string/get_events"/>
+        android:text="@string/get_events"
+        android:enabled="false" />
+
+    <Button
+        android:id="@+id/get_competitors"
+        android:layout_column="0"
+        android:layout_row="6"
+        android:layout_columnSpan="3"
+        android:text="@string/get_competitors"
+        android:enabled="false"/>
+
 </GridLayout>
