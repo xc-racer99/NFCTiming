@@ -12,6 +12,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Spinner;
 
 import org.xmlpull.v1.XmlPullParserException;
@@ -26,11 +27,20 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
+import static ca.orienteeringbc.nfctiming.MainActivity.SELECTED_CLUB_KEY;
+import static ca.orienteeringbc.nfctiming.MainActivity.SELECTED_EVENT_KEY;
+import static ca.orienteeringbc.nfctiming.MainActivity.WJR_PASSWORD;
+import static ca.orienteeringbc.nfctiming.MainActivity.WJR_USERNAME;
+
 
 /**
  * A simple {@link Fragment} subclass.
  */
 public class HomeFragment extends Fragment implements View.OnClickListener, AdapterView.OnItemSelectedListener {
+    // Password and username field
+    private EditText wjrUsername;
+    private EditText wjrPassword;
+
     // A list of all clubs in WJR database
     private Spinner clubSpinner;
     private List<Entry> mClubList = new ArrayList<>();
@@ -49,10 +59,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
     private int clubId = -1;
     private int eventId = -1;
 
-    // SharedPrefs and key
+    // SharedPrefs
     SharedPreferences sharedPref;
-    public static final String SELECTED_CLUB_KEY = "SELECTED_WJR_CLUB";
-    public static final String SELECTED_EVENT_KEY = "SELECTED_WJR_EVENT";
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -63,11 +71,22 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
         // Initialize sharedPrefs
         sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
 
+        // Setup EditTexts
+        wjrPassword = view.findViewById(R.id.wjr_pass);
+        wjrUsername = view.findViewById(R.id.wjr_user);
+
+        String savedUser = sharedPref.getString(WJR_USERNAME, "");
+        String savedPass = sharedPref.getString(WJR_PASSWORD, "");
+        wjrUsername.setText(savedUser);
+        wjrPassword.setText(savedPass);
+
         // Set button listener
+        Button savePrefs = view.findViewById(R.id.save_credentials);
         Button getClubs = view.findViewById(R.id.get_clubs);
         getEvents = view.findViewById(R.id.get_events);
         getCompetitors = view.findViewById(R.id.get_competitors);
 
+        savePrefs.setOnClickListener(this);
         getClubs.setOnClickListener(this);
         getEvents.setOnClickListener(this);
         getCompetitors.setOnClickListener(this);
@@ -137,6 +156,13 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
                 break;
             case R.id.get_competitors:
                 // TODO - Download event xml and save in DB
+                break;
+            case R.id.save_credentials:
+                // TODO - Save credentials
+                SharedPreferences.Editor editor = sharedPref.edit();
+                editor.putString(WJR_USERNAME, wjrUsername.getText().toString());
+                editor.putString(WJR_PASSWORD, wjrPassword.getText().toString());
+                editor.apply();
                 break;
         }
     }

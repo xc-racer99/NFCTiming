@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <GridLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:grid="http://schemas.android.com/apk/res-auto"
 
     android:id="@+id/choice_grid"
     android:layout_width="match_parent"
@@ -26,7 +25,7 @@
 
     <EditText
         android:id="@+id/wjr_user"
-        android:layout_width="110sp"
+        android:layout_width="200sp"
         android:hint="@string/wjr_username"
         android:inputType="text"/>
 
@@ -38,45 +37,56 @@
 
     <EditText
         android:id="@+id/wjr_pass"
-        android:layout_width="110sp"
+        android:layout_width="200sp"
         android:hint="@string/wjr_pass"
         android:inputType="textPassword"/>
 
-    <TextView
+    <Button
+        android:id="@+id/save_credentials"
         android:layout_column="0"
         android:layout_row="4"
+        android:layout_columnSpan="2"
+        android:text="@string/save_credentials"/>
+
+    <TextView
+        android:layout_column="0"
+        android:layout_row="5"
         android:text="@string/club"/>
 
     <Spinner
-        android:layout_width="110sp"
+        android:layout_width="200sp"
         android:id="@+id/club_spinner">
 
     </Spinner>
 
     <Button
         android:id="@+id/get_clubs"
+        android:layout_column="0"
+        android:layout_row="6"
         android:text="@string/get_clubs"/>
 
     <TextView
         android:layout_column="0"
-        android:layout_row="5"
+        android:layout_row="7"
         android:text="@string/event"/>
 
     <Spinner
-        android:layout_width="110sp"
+        android:layout_width="200sp"
         android:id="@+id/event_spinner">
 
     </Spinner>
 
     <Button
         android:id="@+id/get_events"
+        android:layout_column="0"
+        android:layout_row="8"
         android:text="@string/get_events"
         android:enabled="false" />
 
     <Button
         android:id="@+id/get_competitors"
         android:layout_column="0"
-        android:layout_row="6"
+        android:layout_row="9"
         android:layout_columnSpan="3"
         android:text="@string/get_competitors"
         android:enabled="false"/>

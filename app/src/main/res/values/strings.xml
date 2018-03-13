@@ -15,6 +15,7 @@
     <string name="wjr_credential_reason">Required to upload results</string>
     <string name="wjr_username">Username</string>
     <string name="wjr_pass">Password</string>
+    <string name="save_credentials">Save Credentials</string>
     <string name="get_competitors">Download Race Data</string>
 
 

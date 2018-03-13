@@ -8,6 +8,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
 
 public class MainActivity extends AppCompatActivity {
+
+    public static final String SELECTED_CLUB_KEY = "SELECTED_WJR_CLUB";
+    public static final String SELECTED_EVENT_KEY = "SELECTED_WJR_EVENT";
+    public static final String WJR_USERNAME = "WJR_USERNAME";
+    public static final String WJR_PASSWORD = "WJR_PASSWORD";
+
     int currentFrame = 0;
 
     @Override
