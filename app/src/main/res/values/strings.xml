@@ -11,8 +11,10 @@
     <string name="event">Event</string>
     <string name="get_events">Get Events</string>
     <string name="pick_event">Pick Event</string>
-    <string name="wjr_username">WJR Username</string>
-    <string name="wjr_pass">WJR Password</string>
+    <string name="wjr_credentials">WhyJustRun Credentials</string>
+    <string name="wjr_credential_reason">Required to upload results</string>
+    <string name="wjr_username">Username</string>
+    <string name="wjr_pass">Password</string>
 
     <string name="username">Username</string>
     <string name="password">Password</string>

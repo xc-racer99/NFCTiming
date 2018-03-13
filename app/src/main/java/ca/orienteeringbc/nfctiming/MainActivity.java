@@ -12,6 +12,7 @@ import android.view.MenuItem;
 import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
+    int currentFrame = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,23 +26,52 @@ public class MainActivity extends AppCompatActivity {
                     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
                         switch (item.getItemId()) {
                             case R.id.bottombaritem_home:
-                                HomeFragment frag = new HomeFragment();
-                                FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-                                transaction.replace(R.id.frame_fragmentholder, frag);
-                                transaction.addToBackStack(null);
-
-                                transaction.commit();
+                                if (currentFrame != 0) {
+                                    addHomeFragment();
+                                    currentFrame = 0;
+                                }
 
                                 return true;
                             case R.id.bottombaritem_start:
-                                // TODO
+                                if (currentFrame != 1) {
+                                    addStartFragment();
+                                    currentFrame = 1;
+                                }
                                 return true;
                             case R.id.bottombaritem_config:
-                                // TODO
+                                if (currentFrame != 2) {
+                                    addFinishFragment();
+                                    currentFrame = 2;
+                                }
                                 return true;
                         }
                         return false;
                     }
                 });
+
+        // Initialize to home view
+        addHomeFragment();
+    }
+
+    private void addHomeFragment() {
+        HomeFragment frag = new HomeFragment();
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.frame_fragmentholder, frag);
+        transaction.addToBackStack(null);
+
+        transaction.commit();
+    }
+
+    private void addStartFragment() {
+        StartFragment frag = new StartFragment();
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.frame_fragmentholder, frag);
+        transaction.addToBackStack(null);
+
+        transaction.commit();
+    }
+
+    private void addFinishFragment() {
+        // TODO
     }
 }
