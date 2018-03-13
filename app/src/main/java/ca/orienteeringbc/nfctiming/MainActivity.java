@@ -1,15 +1,11 @@
 package ca.orienteeringbc.nfctiming;
 
-import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
-import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
     int currentFrame = 0;
@@ -57,7 +53,6 @@ public class MainActivity extends AppCompatActivity {
         HomeFragment frag = new HomeFragment();
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.frame_fragmentholder, frag);
-        transaction.addToBackStack(null);
 
         transaction.commit();
     }
@@ -66,7 +61,6 @@ public class MainActivity extends AppCompatActivity {
         StartFragment frag = new StartFragment();
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.frame_fragmentholder, frag);
-        transaction.addToBackStack(null);
 
         transaction.commit();
     }

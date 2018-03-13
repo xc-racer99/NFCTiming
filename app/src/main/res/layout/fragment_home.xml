@@ -4,10 +4,10 @@
     xmlns:grid="http://schemas.android.com/apk/res-auto"
 
     android:id="@+id/choice_grid"
-    android:layout_width="fill_parent"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_centerHorizontal="true"
-    android:padding="4dp">
+    android:padding="4sp">
 
     <TextView
         android:layout_columnSpan="3"
@@ -26,6 +26,7 @@
 
     <EditText
         android:id="@+id/wjr_user"
+        android:layout_width="110sp"
         android:hint="@string/username"
         android:inputType="text"/>
 
@@ -34,10 +35,12 @@
         android:orientation="horizontal"
         android:layout_column="0"
         android:layout_row="3"
+
         android:text="@string/wjr_pass"/>
 
     <EditText
         android:id="@+id/wjr_pass"
+        android:layout_width="110sp"
         android:hint="@string/password"
         android:inputType="textPassword"/>
 
@@ -47,7 +50,7 @@
         android:text="@string/club"/>
 
     <Spinner
-        android:maxWidth="200dp"
+        android:layout_width="110sp"
         android:id="@+id/club_spinner">
 
     </Spinner>
@@ -62,7 +65,7 @@
         android:text="@string/event"/>
 
     <Spinner
-        android:maxWidth="200dp"
+        android:layout_width="110sp"
         android:id="@+id/event_spinner">
 
     </Spinner>
