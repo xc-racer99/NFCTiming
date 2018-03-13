@@ -16,15 +16,15 @@ import android.widget.Spinner;
 
 import org.xmlpull.v1.XmlPullParserException;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 
 /**
@@ -47,8 +47,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
 
     // SharedPrefs and key
     SharedPreferences sharedPref;
-    public static final String CLUBS_LIST_KEY = "CLUBS_LIST_KEY";
-    public static final String EVENTS_LIST_KEY = "EVENTS_LIST_KEY";
     public static final String SELECTED_CLUB_KEY = "SELECTED_WJR_CLUB";
     public static final String SELECTED_EVENT_KEY = "SELECTED_WJR_EVENT";
 
@@ -68,24 +66,44 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
         getEvents.setOnClickListener(this);
 
         // Setup club spinner and entries
-        mClubList = setToEntries(sharedPref.getStringSet(CLUBS_LIST_KEY, null));
+        try {
+            List<Entry> tempClubList = loadClubXmlFromDisk();
+            if (tempClubList != null)
+                mClubList = tempClubList;
+        } catch (IOException e) {
+            Log.e("ClubXML", "Failed to create club list - IOException");
+        } catch (XmlPullParserException e) {
+            Log.e("ClubXML", "Failed to create club list - XmlPullParserException");
+        }
         clubSpinner = view.findViewById(R.id.club_spinner);
         clubSpinner.setOnItemSelectedListener(this);
         clubAdapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_list_item_1, mClubList);
         clubSpinner.setAdapter(clubAdapter);
         int selectedClub = findPositionById(mClubList, sharedPref.getInt(SELECTED_CLUB_KEY, -1));
-        if (selectedClub >= 0 && selectedClub < mClubList.size())
+        if (selectedClub >= 0 && selectedClub < mClubList.size()) {
+            clubId = sharedPref.getInt(SELECTED_CLUB_KEY, -1);
             clubSpinner.setSelection(selectedClub);
+        }
 
-        // Setup event spinner
-        mEventList = setToEntries((sharedPref.getStringSet(EVENTS_LIST_KEY, null)));
+        // Setup event spinner and entries
+        try {
+            List<Entry> tempEventList = loadEventXmlFromDisk();
+            if (tempEventList != null)
+                mEventList = tempEventList;
+        } catch (IOException e) {
+            Log.e("EventXML", "Failed to create event list - IOException");
+        } catch (XmlPullParserException e) {
+            Log.e("EventXML", "Failed to create event list - XmlPullParserException");
+        }
         eventSpinner = view.findViewById(R.id.event_spinner);
         eventSpinner.setOnItemSelectedListener(this);
         eventAdapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_list_item_1, mEventList);
         eventSpinner.setAdapter(eventAdapter);
-        int selectedEvent = findPositionById(mClubList, sharedPref.getInt(SELECTED_EVENT_KEY, -1));
-        if (selectedEvent >= 0 && selectedEvent < mEventList.size())
-            clubSpinner.setSelection(selectedEvent);
+        int selectedEvent = findPositionById(mEventList, sharedPref.getInt(SELECTED_EVENT_KEY, -1));
+        if (selectedEvent >= 0 && selectedEvent < mEventList.size()) {
+            eventId = sharedPref.getInt(SELECTED_EVENT_KEY, -1);
+            eventSpinner.setSelection(selectedEvent);
+        }
 
         return view;
     }
@@ -114,7 +132,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
         SharedPreferences.Editor editor = sharedPref.edit();
-
         switch (parent.getId())
         {
             case R.id.club_spinner:
@@ -126,36 +143,23 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
                 editor.putInt(SELECTED_EVENT_KEY, eventId);
                 break;
         }
-
         editor.apply();
     }
 
     @Override
     public void onNothingSelected(AdapterView<?> parent) {
-        // Do nothing?
-    }
-
-    // Converts List<Entry> to Set<String>
-    private Set<String> entriesToSet(List<Entry> entries) {
-        Set<String> strings = new HashSet<>();
-        for (Entry entry : entries)
-            strings.add(entry.toString() + "," + entry.getId());
-
-        return strings;
-    }
-
-    // Converts Set<String> to List<Entry>
-    private List<Entry> setToEntries(Set<String> strings) {
-        List<Entry> entries = new ArrayList<>();
-        if (strings == null)
-            return entries;
-        for (String string : strings) {
-            String[] parts = string.split(",");
-            if (parts.length != 2)
-                continue;
-            entries.add(new Entry(parts[0], Integer.parseInt(parts[1])));
+        SharedPreferences.Editor editor = sharedPref.edit();
+        switch (parent.getId())
+        {
+            case R.id.club_spinner:
+                clubId = -1;
+                editor.putInt(SELECTED_CLUB_KEY, -1);
+                break;
+            case R.id.event_spinner:
+                eventId = -1;
+                editor.putInt(SELECTED_EVENT_KEY, -1);
         }
-        return entries;
+        editor.apply();
     }
 
     // Returns position in ArrayList by id
@@ -186,19 +190,20 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
                 clubAdapter.clear();
                 clubAdapter.addAll(entries);
                 clubAdapter.notifyDataSetChanged();
-                clubSpinner.setSelection(0);
+                int pos = findPositionById(mClubList, clubId);
+                if (pos >= 0) {
+                    clubSpinner.setSelection(pos);
+                } else {
+                    clubSpinner.setSelection(0);
+                    SharedPreferences.Editor editor = sharedPref.edit();
+                    editor.putInt(SELECTED_CLUB_KEY, -1);
+                    editor.apply();
 
-                // Also clear event list
-                eventAdapter.clear();
-                eventAdapter.notifyDataSetChanged();
-                eventSpinner.setSelection(0);
-
-                SharedPreferences.Editor editor = sharedPref.edit();
-                editor.putStringSet(CLUBS_LIST_KEY, entriesToSet(entries));
-                editor.putStringSet(EVENTS_LIST_KEY, null);
-                editor.putInt(SELECTED_CLUB_KEY, -1);
-                editor.putInt(SELECTED_EVENT_KEY, -1);
-                editor.apply();
+                    // Also clear event list
+                    eventAdapter.clear();
+                    eventAdapter.notifyDataSetChanged();
+                    updateEventId();
+                }
             }
         }
     }
@@ -224,49 +229,109 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
                 eventAdapter.addAll(entries);
                 eventAdapter.notifyDataSetChanged();
                 eventSpinner.setSelection(0);
-
-                SharedPreferences.Editor editor = sharedPref.edit();
-                editor.putStringSet(EVENTS_LIST_KEY, entriesToSet(entries));
-                editor.putInt(SELECTED_EVENT_KEY, -1);
-                editor.apply();
+                updateEventId();
             }
+        }
+    }
+
+    private void updateEventId() {
+        int pos = findPositionById(mEventList, eventId);
+        if (pos >= 0)
+            eventSpinner.setSelection(pos);
+        else {
+            eventSpinner.setSelection(0);
+            SharedPreferences.Editor editor = sharedPref.edit();
+            editor.putInt(SELECTED_EVENT_KEY, -1);
+            editor.apply();
         }
     }
 
     // Downloads club xml and parses
     private List<Entry> loadClubXmlFromNetwork(String urlString) throws XmlPullParserException, IOException {
         InputStream stream = null;
-        WjrClubParser xmlParser = new WjrClubParser();
-        List<Entry> entries;
+        FileOutputStream fos = null;
 
         try {
             stream = downloadUrl(urlString);
-            entries = xmlParser.parse(stream);
-            // Makes sure that the InputStream is closed after the app is
+            fos = getActivity().openFileOutput("clubs.xml", Context.MODE_PRIVATE);
+            byte[] buffer = new byte[1024];
+            int len;
+            while ((len = stream.read(buffer)) != -1) {
+                fos.write(buffer, 0, len);
+            }
+            fos.close();
+            // Makes sure that the streams are closed after the app is
             // finished using it.
         } finally {
             if (stream != null) {
                 stream.close();
+            }
+            if (fos != null) {
+                fos.close();
+            }
+        }
+        return loadClubXmlFromDisk();
+    }
+
+    private List<Entry> loadClubXmlFromDisk() throws XmlPullParserException, IOException{
+        FileInputStream fis = null;
+        WjrClubParser xmlParser = new WjrClubParser();
+        List<Entry> entries;
+
+        try {
+            fis = new FileInputStream(getActivity().getFileStreamPath("clubs.xml"));
+            entries = xmlParser.parse(fis);
+            // Makes sure that the streams are closed after the app is
+            // finished using it.
+        } finally {
+            if (fis != null) {
+                fis.close();
             }
         }
 
         return entries;
     }
 
-    // Downloads club events xml and parses
+    // Downloads club xml and parses
     private List<Entry> loadEventXmlFromNetwork(String urlString) throws XmlPullParserException, IOException {
         InputStream stream = null;
-        WjrEventParser xmlParser = new WjrEventParser();
-        List<Entry> entries;
+        FileOutputStream fos = null;
 
         try {
             stream = downloadUrl(urlString);
-            entries = xmlParser.parse(stream);
-            // Makes sure that the InputStream is closed after the app is
+            fos = getActivity().openFileOutput("events_" + clubId + ".xml", Context.MODE_PRIVATE);
+            byte[] buffer = new byte[1024];
+            int len;
+            while ((len = stream.read(buffer)) != -1) {
+                fos.write(buffer, 0, len);
+            }
+            fos.close();
+            // Makes sure that the streams are closed after the app is
             // finished using it.
         } finally {
             if (stream != null) {
                 stream.close();
+            }
+            if (fos != null) {
+                fos.close();
+            }
+        }
+        return loadEventXmlFromDisk();
+    }
+
+    private List<Entry> loadEventXmlFromDisk() throws XmlPullParserException, IOException{
+        FileInputStream fis = null;
+        WjrEventParser xmlParser = new WjrEventParser();
+        List<Entry> entries;
+
+        try {
+            fis = new FileInputStream(getActivity().getFileStreamPath("events_" + clubId + ".xml"));
+            entries = xmlParser.parse(fis);
+            // Makes sure that the streams are closed after the app is
+            // finished using it.
+        } finally {
+            if (fis != null) {
+                fis.close();
             }
         }
 
