@@ -1,5 +1,6 @@
 package ca.orienteeringbc.nfctiming;
 
+import android.arch.persistence.room.Room;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
@@ -60,7 +61,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
     private int eventId = -1;
 
     // SharedPrefs
-    SharedPreferences sharedPref;
+    private SharedPreferences sharedPref;
+
+    // Database
+    private WjrDatabase database;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -133,6 +137,11 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
             getCompetitors.setEnabled(true);
         }
 
+        // Initialize database
+        database = Room.databaseBuilder(getActivity().getApplicationContext(), WjrDatabase.class, MainActivity.DATABASE_NAME)
+                .fallbackToDestructiveMigration()
+                .build();
+
         return view;
     }
 
@@ -158,7 +167,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
                 // TODO - Download event xml and save in DB
                 break;
             case R.id.save_credentials:
-                // TODO - Save credentials
                 SharedPreferences.Editor editor = sharedPref.edit();
                 editor.putString(WJR_USERNAME, wjrUsername.getText().toString());
                 editor.putString(WJR_PASSWORD, wjrPassword.getText().toString());
