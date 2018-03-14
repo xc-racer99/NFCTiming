@@ -17,7 +17,7 @@ public class Competitor {
     // The event id
     public int wjrEventId;
 
-    public int wjrId;
+    public int wjrId = -1;
 
     public int nfcTagId;
 
@@ -25,9 +25,11 @@ public class Competitor {
 
     public String lastName;
 
+    public int wjrCategoryId = -1;
+
     // In seconds
-    public long startTime;
-    public long endTime;
+    public long startTime = 0;
+    public long endTime = 0;
 
     public Competitor(int wjrEventId, String firstName, String lastName) {
         this.wjrEventId = wjrEventId;

@@ -13,13 +13,10 @@ public class WjrEvent {
     @PrimaryKey
     public int wjrId;
 
-    public String eventDate;
-
     public String eventName;
 
-    public WjrEvent(int wjrId, String eventDate, String eventName) {
+    public WjrEvent(int wjrId, String eventName) {
         this.wjrId = wjrId;
-        this.eventDate = eventDate;
         this.eventName = eventName;
     }
 }

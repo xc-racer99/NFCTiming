@@ -17,6 +17,8 @@
     <string name="wjr_pass">Password</string>
     <string name="save_credentials">Save Credentials</string>
     <string name="get_competitors">Download Race Data</string>
+    <string name="entry_list_success">Successfully downloaded and imported entries</string>
+    <string name="entry_list_failure">Failed to download or import entries</string>
 
 
     <!-- Start List -->

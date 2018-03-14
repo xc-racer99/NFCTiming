@@ -18,13 +18,9 @@ public class WjrCategory {
 
     public String categoryName;
 
-    // In metres
-    public int length;
-
-    public WjrCategory(int wjrCategoryId, int wjrEventId, String categoryName, int length) {
+    public WjrCategory(int wjrCategoryId, int wjrEventId, String categoryName) {
         this.wjrCategoryId = wjrCategoryId;
         this.wjrEventId = wjrEventId;
         this.categoryName = categoryName;
-        this.length = length;
     }
 }

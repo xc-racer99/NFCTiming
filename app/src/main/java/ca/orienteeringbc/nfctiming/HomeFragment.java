@@ -15,6 +15,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -164,7 +165,11 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
                 }
                 break;
             case R.id.get_competitors:
-                // TODO - Download event xml and save in DB
+                if (eventId > 0) {
+                    String url = "https://whyjustrun.ca/iof/3.0/events/" + eventId + "/entry_list.xml";
+                    Log.e("Test", "Url is " + url);
+                    new DownloadEntryListTask().execute(url);
+                }
                 break;
             case R.id.save_credentials:
                 SharedPreferences.Editor editor = sharedPref.edit();
@@ -288,6 +293,30 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
         }
     }
 
+    // Implementation of AsyncTask used to download entry list XML from WJR
+    private class DownloadEntryListTask extends AsyncTask<String, Void, Boolean> {
+
+        @Override
+        protected Boolean doInBackground(String... urls) {
+            try {
+                return loadEntryListXmlFromNetwork(urls[0]);
+            } catch (IOException e) {
+                return null;
+            } catch (XmlPullParserException e) {
+                return null;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Boolean success) {
+            if (success == null || !success) {
+                Toast.makeText(getActivity().getApplicationContext(), R.string.entry_list_failure, Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(getActivity().getApplicationContext(), R.string.entry_list_success, Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
     private void updateEventId() {
         int pos = findPositionById(mEventList, eventId);
         if (pos >= 0) {
@@ -375,7 +404,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
         return loadEventXmlFromDisk();
     }
 
-    private List<Entry> loadEventXmlFromDisk() throws XmlPullParserException, IOException{
+    private List<Entry> loadEventXmlFromDisk() throws XmlPullParserException, IOException {
         FileInputStream fis = null;
         WjrEventParser xmlParser = new WjrEventParser();
         List<Entry> entries;
@@ -392,6 +421,37 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
         }
 
         return entries;
+    }
+
+    private Boolean loadEntryListXmlFromNetwork(String urlString) throws XmlPullParserException, IOException {
+        InputStream stream = null;
+        WjrCompetitorParser xmlParser = new WjrCompetitorParser();
+        EventInfo info;
+
+        Log.e("Testing", "Got here 1");
+
+        try {
+            stream = downloadUrl(urlString);
+            info = xmlParser.parse(stream);
+            // Makes sure that the streams are closed after the app is
+            // finished using it.
+        } finally {
+            if (stream != null) {
+                stream.close();
+            }
+        }
+
+        Log.e("Testing", "Got here");
+
+        if (info != null) {
+            // Add info to DB
+            database.daoAccess().addEvent(info.event);
+            database.daoAccess().addCategories(info.categories);
+            database.daoAccess().insertCompetitorList(info.competitors);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     // Given a string representation of a URL, sets up a connection and gets
@@ -421,5 +481,17 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
 
         public int getId() { return id; }
         public String toString() { return title; }
+    }
+
+    // This class represents an event and it's contents
+    public static class EventInfo {
+        WjrEvent event;
+        List<WjrCategory> categories;
+        List<Competitor> competitors;
+
+        public EventInfo() {
+            categories = new ArrayList<>();
+            competitors = new ArrayList<>();
+        }
     }
 }

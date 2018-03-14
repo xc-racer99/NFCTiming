@@ -53,6 +53,6 @@ public interface DaoAccess {
     void addEvent(WjrEvent event);
 
     // WjrEvent queries
-    @Query("SELECT eventName FROM WjrEvent WHERE wjrEventId = :wjrEventId")
+    @Query("SELECT eventName FROM WjrEvent WHERE wjrId = :wjrEventId")
     String getEventNameById(int wjrEventId);
 }
