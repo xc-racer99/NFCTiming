@@ -41,15 +41,15 @@ public interface DaoAccess {
     List<Competitor> getCompetitorsByEvent(int wjrEventId);
 
     // WjrCategory setter
-    @Insert
+    @Insert (onConflict = OnConflictStrategy.REPLACE)
     void addCategories(List<WjrCategory> categoryList);
 
     // WjrCategory queries
     @Query("SELECT * FROM WjrCategory WHERE wjrEventId = :wjrEventId")
-    WjrCategory getCategoryById(int wjrEventId);
+    List<WjrCategory> getCategoryById(int wjrEventId);
 
     // WjrEvent setter
-    @Insert
+    @Insert (onConflict = OnConflictStrategy.REPLACE)
     void addEvent(WjrEvent event);
 
     // WjrEvent queries

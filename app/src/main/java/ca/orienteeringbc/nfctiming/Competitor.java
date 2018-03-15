@@ -2,6 +2,7 @@ package ca.orienteeringbc.nfctiming;
 
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.ForeignKey;
+import android.arch.persistence.room.Index;
 import android.arch.persistence.room.PrimaryKey;
 
 /**
@@ -9,10 +10,12 @@ import android.arch.persistence.room.PrimaryKey;
  * Contains info for each competitor in an event
  */
 
-@Entity (foreignKeys = @ForeignKey(entity = WjrEvent.class, parentColumns = "wjrId", childColumns = "wjrEventId"))
+@Entity (
+        foreignKeys = @ForeignKey(entity = WjrEvent.class, parentColumns = "wjrId", childColumns = "wjrEventId"),
+        indices = {@Index(value = { "firstName", "lastName", "wjrEventId", "wjrId" }, unique = true)})
 public class Competitor {
     @PrimaryKey(autoGenerate = true)
-    public int internalId;
+    int internalId;
 
     // The event id
     public int wjrEventId;

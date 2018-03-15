@@ -23,4 +23,6 @@ public class WjrCategory {
         this.wjrEventId = wjrEventId;
         this.categoryName = categoryName;
     }
+
+    public String toString() { return categoryName; }
 }
