@@ -6,6 +6,7 @@ import android.arch.persistence.room.Room;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -16,6 +17,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import java.util.List;
 
@@ -24,11 +26,19 @@ import java.util.List;
  * A simple {@link Fragment} subclass.
  */
 public class StartFragment extends Fragment {
-    private SharedPreferences sharedPrefs;
     private WjrDatabase database;
+
+    // ArrayAdapter for start list
+    private ArrayAdapter<Competitor> adapter;
 
     // The event id
     private int eventId;
+
+    // Categories in use for event
+    private List<WjrCategory> categories;
+
+    // The fragment's view
+    private View view;
 
     public StartFragment() {
         // Required empty public constructor
@@ -38,25 +48,38 @@ public class StartFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View view = inflater.inflate(R.layout.fragment_start, container, false);
+        view = inflater.inflate(R.layout.fragment_start, container, false);
 
         // Initialize shared prefs
-        sharedPrefs = getActivity().getPreferences(Context.MODE_PRIVATE);
+        SharedPreferences sharedPrefs = getActivity().getPreferences(Context.MODE_PRIVATE);
 
         // Initialize database
-        // FIXME - Move queries off of main thread
         database = Room.databaseBuilder(getActivity().getApplicationContext(), WjrDatabase.class, MainActivity.DATABASE_NAME)
                 .fallbackToDestructiveMigration()
-                .allowMainThreadQueries()
                 .build();
 
         eventId = sharedPrefs.getInt(MainActivity.SELECTED_EVENT_KEY, -1);
 
         if (eventId > 0) {
-            final List<Competitor> competitors = database.daoAccess().getCompetitorsByEvent(eventId);
-            final List<WjrCategory> categories = database.daoAccess().getCategoryById(eventId);
+            new SetupStartListTask().execute();
+        } else {
+            // TODO - Warn about no event selected
+        }
+
+        return view;
+    }
+
+    private class SetupStartListTask extends AsyncTask<Void, Void, List<Competitor>> {
+        @Override
+        protected List<Competitor> doInBackground(Void... voids) {
+            categories = database.daoAccess().getCategoryById(eventId);
+            return database.daoAccess().getCompetitorsByEvent(eventId);
+        }
+
+        @Override
+        protected void onPostExecute(List<Competitor> competitors) {
             ListView  startList = view.findViewById(R.id.startlist_listview);
-            final ArrayAdapter<Competitor> adapter = new StartListArrayAdapter(getActivity(), competitors, categories);
+            adapter = new StartListArrayAdapter(getActivity(), competitors, categories);
             startList.setAdapter(adapter);
 
             // Setup add new person
@@ -77,24 +100,40 @@ public class StartFragment extends Fragment {
                     alertDialogBuilder.setPositiveButton(R.string.add, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
-                            Competitor competitor = new Competitor(eventId, firstName.getText().toString(), lastName.getText().toString());
-                            WjrCategory category = (WjrCategory) spinner.getSelectedItem();
-                            competitor.wjrCategoryId = category.wjrCategoryId;
-                            database.daoAccess().insertCompetitors(competitor);
-                            adapter.add(competitor);
+                            String firstNameString = firstName.getText().toString();
+                            String lastNameString = lastName.getText().toString();
+                            if (firstNameString.isEmpty() || lastNameString.isEmpty()) {
+                                // No name given, warn
+                                Toast.makeText(getActivity(), R.string.no_name, Toast.LENGTH_LONG).show();
+                            } else {
+                                Competitor competitor = new Competitor(eventId, firstName.getText().toString(), lastName.getText().toString());
+                                WjrCategory category = (WjrCategory) spinner.getSelectedItem();
+                                competitor.wjrCategoryId = category.wjrCategoryId;
+                                new AddCompetitorTask().execute(competitor);
+                            }
                         }
-                    }).setNegativeButton("Cancel",
+                    }).setNegativeButton(R.string.cancel,
                             new DialogInterface.OnClickListener() {
                                 public void onClick(DialogInterface dialogBox, int id) {
                                     dialogBox.cancel();
                                 }
-                    }).show();
+                            }).show();
                 }
             });
-        } else {
-            // TODO - Warn about no event selected
+        }
+    }
+
+    // Async class to add a competitor to DB and ArrayAdapter
+    private class AddCompetitorTask extends AsyncTask<Competitor, Void, Competitor> {
+        @Override
+        protected Competitor doInBackground(Competitor... competitors) {
+            database.daoAccess().insertCompetitors(competitors[0]);
+            return competitors[0];
         }
 
-        return view;
+        @Override
+        protected void onPostExecute(Competitor competitor) {
+            adapter.add(competitor);
+        }
     }
 }
