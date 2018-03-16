@@ -41,6 +41,8 @@
     <string name="upload_results">Upload Results</string>
     <string name="status_dns">DNS</string>
     <string name="status_dnf">DNF</string>
+    <string name="success_uploading">Successfully uploaded results</string>
+    <string name="error_uploading">Encountered an error uploading results</string>
 
     <!-- Common -->
     <string name="no_event">No Event Selected</string>
