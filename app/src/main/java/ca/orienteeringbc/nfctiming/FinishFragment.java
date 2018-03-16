@@ -1,6 +1,5 @@
 package ca.orienteeringbc.nfctiming;
 
-
 import android.arch.persistence.room.Room;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -11,6 +10,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import java.util.List;
 
@@ -49,18 +49,17 @@ public class FinishFragment extends Fragment {
         eventId = sharedPrefs.getInt(MainActivity.SELECTED_EVENT_KEY, -1);
 
         if (eventId > 0) {
-            new SetupResultList().execute(database);
-        } else {
-            // TODO - Warn that no event is selected
+            new SetupEventName().execute();
+            new SetupResultList().execute();
         }
 
         return view;
     }
 
-    private class SetupResultList extends AsyncTask<WjrDatabase, Void, List<Competitor>> {
+    private class SetupResultList extends AsyncTask<Void, Void, List<Competitor>> {
         @Override
-        protected List<Competitor> doInBackground(WjrDatabase... databases) {
-            return databases[0].daoAccess().getCompetitorsByEvent(eventId);
+        protected List<Competitor> doInBackground(Void... voids) {
+            return database.daoAccess().getCompetitorsByEvent(eventId);
         }
 
         @Override
@@ -68,6 +67,20 @@ public class FinishFragment extends Fragment {
             ListView listView = view.findViewById(R.id.results_listview);
             FinishArrayAdapter adapter = new FinishArrayAdapter(getActivity(), competitors);
             listView.setAdapter(adapter);
+        }
+    }
+
+    // Sets the event name field
+    private class SetupEventName extends AsyncTask<Void, Void, String> {
+        @Override
+        protected String doInBackground(Void... voids) {
+            return database.daoAccess().getEventNameById(eventId);
+        }
+
+        @Override
+        protected void onPostExecute(String name) {
+            TextView eventName = view.findViewById(R.id.event_title);
+            eventName.setText(name);
         }
     }
 }

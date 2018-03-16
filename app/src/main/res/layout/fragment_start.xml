@@ -5,15 +5,25 @@
     android:orientation="vertical"
     tools:context="ca.orienteeringbc.nfctiming.StartFragment">
 
+    <TextView
+        android:id="@+id/event_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="5dp"
+        android:text="@string/no_event"/>
+
     <Button
         android:id="@+id/add_new_person"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:enabled="false"
         android:text="@string/add_new"/>
 
     <ListView
         android:id="@+id/startlist_listview"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"></ListView>
+        android:layout_height="wrap_content">
+
+    </ListView>
 
 </LinearLayout>

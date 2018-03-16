@@ -41,4 +41,7 @@
     <string name="upload_results">Upload Results</string>
     <string name="status_dns">DNS</string>
     <string name="status_dnf">DNF</string>
+
+    <!-- Common -->
+    <string name="no_event">No Event Selected</string>
 </resources>

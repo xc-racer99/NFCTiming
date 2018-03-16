@@ -17,6 +17,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.List;
@@ -61,14 +62,14 @@ public class StartFragment extends Fragment {
         eventId = sharedPrefs.getInt(MainActivity.SELECTED_EVENT_KEY, -1);
 
         if (eventId > 0) {
+            new SetupEventName().execute();
             new SetupStartListTask().execute();
-        } else {
-            // TODO - Warn about no event selected
         }
 
         return view;
     }
 
+    // Fetches competitors and categories from database, initializes button
     private class SetupStartListTask extends AsyncTask<Void, Void, List<Competitor>> {
         @Override
         protected List<Competitor> doInBackground(Void... voids) {
@@ -84,6 +85,7 @@ public class StartFragment extends Fragment {
 
             // Setup add new person
             Button button = view.findViewById(R.id.add_new_person);
+            button.setEnabled(true);
             button.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -134,6 +136,20 @@ public class StartFragment extends Fragment {
         @Override
         protected void onPostExecute(Competitor competitor) {
             adapter.add(competitor);
+        }
+    }
+
+    // Sets the event name field
+    private class SetupEventName extends AsyncTask<Void, Void, String> {
+        @Override
+        protected String doInBackground(Void... voids) {
+            return database.daoAccess().getEventNameById(eventId);
+        }
+
+        @Override
+        protected void onPostExecute(String name) {
+            TextView eventName = view.findViewById(R.id.event_title);
+            eventName.setText(name);
         }
     }
 }

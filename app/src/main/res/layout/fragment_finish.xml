@@ -5,11 +5,19 @@
     android:orientation="vertical"
     tools:context="ca.orienteeringbc.nfctiming.StartFragment">
 
+    <TextView
+        android:id="@+id/event_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="5dp"
+        android:text="@string/no_event"/>
+
     <Button
         android:id="@+id/upload_results"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:padding="6dp"
+        android:enabled="false"
         android:text="@string/upload_results" />
 
     <ListView
