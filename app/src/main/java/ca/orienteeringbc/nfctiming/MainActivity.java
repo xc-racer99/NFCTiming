@@ -76,6 +76,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void addFinishFragment() {
-        // TODO
+        FinishFragment frag = new FinishFragment();
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.frame_fragmentholder, frag);
+
+        transaction.commit();
     }
 }
