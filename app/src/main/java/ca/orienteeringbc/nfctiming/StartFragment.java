@@ -79,49 +79,54 @@ public class StartFragment extends Fragment {
 
         @Override
         protected void onPostExecute(List<Competitor> competitors) {
-            ListView  startList = view.findViewById(R.id.startlist_listview);
-            adapter = new StartListArrayAdapter(getActivity(), competitors, categories);
-            startList.setAdapter(adapter);
+            // If categories.size() is 0, then we probably haven't fetched the event data
+            if (categories.size() == 0) {
+                Toast.makeText(getActivity(), R.string.no_categories, Toast.LENGTH_LONG).show();
+            } else {
+                ListView startList = view.findViewById(R.id.startlist_listview);
+                adapter = new StartListArrayAdapter(getActivity(), competitors, categories);
+                startList.setAdapter(adapter);
 
-            // Setup add new person
-            Button button = view.findViewById(R.id.add_new_person);
-            button.setEnabled(true);
-            button.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    LayoutInflater layoutInflaterAndroid = LayoutInflater.from(getActivity());
-                    View mView = layoutInflaterAndroid.inflate(R.layout.add_new_competitor_dialog, null);
-                    AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(getActivity());
-                    alertDialogBuilder.setView(mView);
+                // Setup add new person
+                Button button = view.findViewById(R.id.add_new_person);
+                button.setEnabled(true);
+                button.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        LayoutInflater layoutInflaterAndroid = LayoutInflater.from(getActivity());
+                        View mView = layoutInflaterAndroid.inflate(R.layout.add_new_competitor_dialog, null);
+                        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(getActivity());
+                        alertDialogBuilder.setView(mView);
 
-                    final EditText firstName = mView.findViewById(R.id.first_name_input);
-                    final EditText lastName = mView.findViewById(R.id.last_name_input);
-                    final Spinner spinner = mView.findViewById(R.id.new_person_category_spinner);
-                    ArrayAdapter<WjrCategory> catAdapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_list_item_1, categories);
-                    spinner.setAdapter(catAdapter);
-                    alertDialogBuilder.setPositiveButton(R.string.add, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            String firstNameString = firstName.getText().toString();
-                            String lastNameString = lastName.getText().toString();
-                            if (firstNameString.isEmpty() || lastNameString.isEmpty()) {
-                                // No name given, warn
-                                Toast.makeText(getActivity(), R.string.no_name, Toast.LENGTH_LONG).show();
-                            } else {
-                                Competitor competitor = new Competitor(eventId, firstName.getText().toString(), lastName.getText().toString());
-                                WjrCategory category = (WjrCategory) spinner.getSelectedItem();
-                                competitor.wjrCategoryId = category.wjrCategoryId;
-                                new AddCompetitorTask().execute(competitor);
-                            }
-                        }
-                    }).setNegativeButton(R.string.cancel,
-                            new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialogBox, int id) {
-                                    dialogBox.cancel();
+                        final EditText firstName = mView.findViewById(R.id.first_name_input);
+                        final EditText lastName = mView.findViewById(R.id.last_name_input);
+                        final Spinner spinner = mView.findViewById(R.id.new_person_category_spinner);
+                        ArrayAdapter<WjrCategory> catAdapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_list_item_1, categories);
+                        spinner.setAdapter(catAdapter);
+                        alertDialogBuilder.setPositiveButton(R.string.add, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                String firstNameString = firstName.getText().toString();
+                                String lastNameString = lastName.getText().toString();
+                                if (firstNameString.isEmpty() || lastNameString.isEmpty()) {
+                                    // No name given, warn
+                                    Toast.makeText(getActivity(), R.string.no_name, Toast.LENGTH_LONG).show();
+                                } else {
+                                    Competitor competitor = new Competitor(eventId, firstName.getText().toString(), lastName.getText().toString());
+                                    WjrCategory category = (WjrCategory) spinner.getSelectedItem();
+                                    competitor.wjrCategoryId = category.wjrCategoryId;
+                                    new AddCompetitorTask().execute(competitor);
                                 }
-                            }).show();
-                }
-            });
+                            }
+                        }).setNegativeButton(R.string.cancel,
+                                new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialogBox, int id) {
+                                        dialogBox.cancel();
+                                    }
+                                }).show();
+                    }
+                });
+            }
         }
     }
 

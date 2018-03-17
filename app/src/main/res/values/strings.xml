@@ -1,8 +1,8 @@
 <resources>
     <string name="app_name">NFC Timing</string>
-    <string name="title_home">Home</string>
-    <string name="start">Start</string>
-    <string name="finish">Finish</string>
+    <string name="title_home">Event Setup</string>
+    <string name="start">Start List</string>
+    <string name="finish">Results</string>
 
     <!-- Home Fragment Strings -->
     <string name="club">Club</string>
@@ -16,7 +16,7 @@
     <string name="wjr_username">Username</string>
     <string name="wjr_pass">Password</string>
     <string name="save_credentials">Save Credentials</string>
-    <string name="get_competitors">Download Race Data</string>
+    <string name="get_competitors">Download Start List</string>
     <string name="entry_list_success">Successfully downloaded and imported entries</string>
     <string name="entry_list_failure">Failed to download or import entries</string>
 
@@ -36,6 +36,7 @@
     <string name="first_name">First Name</string>
     <string name="last_name">Last Name</string>
     <string name="cancel">Cancel</string>
+    <string name="no_categories">No categories found.  Have you downloaded the start list?</string>
 
     <!-- Finish/Results fragment -->
     <string name="upload_results">Upload Results</string>
