@@ -1,9 +1,12 @@
 package ca.orienteeringbc.nfctiming;
 
+import android.annotation.TargetApi;
+import android.app.Activity;
 import android.arch.persistence.room.Room;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -66,6 +69,45 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
 
     // Database
     private WjrDatabase database;
+
+    // Callback for Activity
+    OnEventIdChangeListener mCallback;
+
+    // Interface to notify Activity of change in eventId
+    public interface OnEventIdChangeListener {
+        public void onEventIdChange(int wjrId);
+    }
+
+    @TargetApi(23)
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+
+        if (context instanceof Activity)
+            finishCallback((Activity) context);
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+
+        // Google changed onAttach in Fragments...
+        // See https://stackoverflow.com/questions/32083053/android-fragment-onattach-deprecated#32088447
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            finishCallback(activity);
+        }
+    }
+
+    private void finishCallback(Activity activity) {
+        try {
+            mCallback = (OnEventIdChangeListener) activity;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(activity.toString()
+                    + " must implement OnHeadlineSelectedListener");
+        }
+
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -194,6 +236,11 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
                 eventId = mEventList.get(position).getId();
                 editor.putInt(SELECTED_EVENT_KEY, eventId);
                 getCompetitors.setEnabled(true);
+
+                // Callback to parent activity
+                if (mCallback != null)
+                    mCallback.onEventIdChange(eventId);
+
                 break;
         }
         editor.apply();

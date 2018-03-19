@@ -35,7 +35,7 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements HomeFragment.OnEventIdChangeListener {
 
     // Shared prefs keys
     public static final String SELECTED_CLUB_KEY = "SELECTED_WJR_CLUB";
@@ -58,10 +58,17 @@ public class MainActivity extends AppCompatActivity {
     // Database
     private WjrDatabase database;
 
+    // Event Id
+    private int eventId;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // Determine eventId
+        SharedPreferences preferences = getPreferences(MODE_PRIVATE);
+        eventId = preferences.getInt(SELECTED_EVENT_KEY, -1);
 
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_nav);
         bottomNavigationView.setOnNavigationItemSelectedListener(
@@ -96,7 +103,6 @@ public class MainActivity extends AppCompatActivity {
         // Initialize to home view
         addHomeFragment();
 
-        // Setup database
         // Initialize database
         database = Room.databaseBuilder(getApplicationContext(), WjrDatabase.class, MainActivity.DATABASE_NAME)
                 .fallbackToDestructiveMigration()
@@ -155,8 +161,13 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onNewIntent(Intent intent) {
+
+        if (eventId == -1) {
+            Toast.makeText(this, R.string.no_event, Toast.LENGTH_LONG).show();
+            return;
+        }
+
         // Fetch the tag from the intent
-        // TODO - Do something with tag data
         NdefMessage[] messages = (NdefMessage[]) intent.getParcelableArrayExtra(
                 NfcAdapter.EXTRA_NDEF_MESSAGES);
 
@@ -204,6 +215,11 @@ public class MainActivity extends AppCompatActivity {
         transaction.commit();
     }
 
+    // Receive callbacks from HomeFragment about changes to the eventId
+    public void onEventIdChange(int id) {
+        eventId = id;
+    }
+
     /**
      *  Tries to find a Competitor by their NFC tag number (for non-assigned cards)
      *  For pre-assigned cards, see @CompetitorFromWjrIdTask
@@ -213,9 +229,8 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected Competitor doInBackground(Long... id) {
-            SharedPreferences preferences = getPreferences(Context.MODE_PRIVATE);
             nfcId = id[0];
-            return database.daoAccess().getCompetitorByNfc(preferences.getInt(SELECTED_EVENT_KEY, -1), id[0]);
+            return database.daoAccess().getCompetitorByNfc(eventId, id[0]);
         }
 
         @Override
@@ -239,9 +254,8 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected Competitor doInBackground(Integer... wjrId) {
-            SharedPreferences preferences = getPreferences(Context.MODE_PRIVATE);
             this.wjrId = wjrId[0];
-            return database.daoAccess().getCompetitorByWjrId(preferences.getInt(SELECTED_EVENT_KEY, -1), wjrId[0]);
+            return database.daoAccess().getCompetitorByWjrId(eventId, wjrId[0]);
         }
 
         @Override
@@ -268,10 +282,9 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected List<Competitor> doInBackground(Long... ids) {
-            SharedPreferences preferences = getPreferences(Context.MODE_PRIVATE);
             nfcId = ids[0];
             wjrId = ids[1].intValue();
-            return database.daoAccess().getCompetitorsByEvent(preferences.getInt(SELECTED_EVENT_KEY, -1));
+            return database.daoAccess().getUnstartedCompetitorsByEvent(eventId);
         }
 
         @Override
