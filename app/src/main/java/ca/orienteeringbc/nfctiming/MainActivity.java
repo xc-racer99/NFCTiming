@@ -3,7 +3,6 @@ package ca.orienteeringbc.nfctiming;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.arch.persistence.room.Room;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -21,18 +20,17 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Spinner;
 import android.widget.Toast;
 
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements HomeFragment.OnEventIdChangeListener {
@@ -47,7 +45,13 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
     public static final String DATABASE_NAME = "wjr_database";
 
     // Counter to determine if we should reload the frame or not
-    int currentFrame = 0;
+    private enum FrameType {
+        HomeFrag,
+        StartFrag,
+        FinishFrag,
+    }
+
+    FrameType currentFrame = FrameType.HomeFrag;
 
     // NFC related vars
     private NfcAdapter mAdapter;
@@ -77,22 +81,22 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
                         switch (item.getItemId()) {
                             case R.id.bottombaritem_home:
-                                if (currentFrame != 0) {
+                                if (currentFrame != FrameType.HomeFrag) {
                                     addHomeFragment();
-                                    currentFrame = 0;
+                                    currentFrame = FrameType.HomeFrag;
                                 }
 
                                 return true;
                             case R.id.bottombaritem_start:
-                                if (currentFrame != 1) {
+                                if (currentFrame != FrameType.StartFrag) {
                                     addStartFragment();
-                                    currentFrame = 1;
+                                    currentFrame = FrameType.StartFrag;
                                 }
                                 return true;
                             case R.id.bottombaritem_config:
-                                if (currentFrame != 2) {
+                                if (currentFrame != FrameType.FinishFrag) {
                                     addFinishFragment();
-                                    currentFrame = 2;
+                                    currentFrame = FrameType.FinishFrag;
                                 }
                                 return true;
                         }
@@ -279,11 +283,13 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
     private class SelectCompetitorTask extends  AsyncTask<Long, Void, List<Competitor>> {
         private long nfcId;
         private int wjrId;
+        private List<WjrCategory> categories;
 
         @Override
         protected List<Competitor> doInBackground(Long... ids) {
             nfcId = ids[0];
             wjrId = ids[1].intValue();
+            categories = database.daoAccess().getCategoryById(eventId);
             return database.daoAccess().getUnstartedCompetitorsByEvent(eventId);
         }
 
@@ -305,7 +311,47 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
             addNewCompetitor.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    // Todo - create a new competitor task
+                    LayoutInflater layoutInflaterAndroid = LayoutInflater.from(MainActivity.this);
+                    View mView = layoutInflaterAndroid.inflate(R.layout.add_new_competitor_dialog, null);
+                    AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(MainActivity.this);
+                    alertDialogBuilder.setView(mView);
+
+                    final EditText firstName = mView.findViewById(R.id.first_name_input);
+                    final EditText lastName = mView.findViewById(R.id.last_name_input);
+                    final Spinner spinner = mView.findViewById(R.id.new_person_category_spinner);
+                    ArrayAdapter<WjrCategory> catAdapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, categories);
+                    spinner.setAdapter(catAdapter);
+                    alertDialogBuilder.setPositiveButton(R.string.add, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            String firstNameString = firstName.getText().toString();
+                            String lastNameString = lastName.getText().toString();
+                            if (firstNameString.isEmpty() || lastNameString.isEmpty()) {
+                                // No name given, warn
+                                Toast.makeText(MainActivity.this, R.string.no_name, Toast.LENGTH_LONG).show();
+                            } else {
+                                Competitor competitor = new Competitor(eventId, firstName.getText().toString(), lastName.getText().toString());
+                                WjrCategory category = (WjrCategory) spinner.getSelectedItem();
+                                competitor.wjrCategoryId = category.wjrCategoryId;
+                                competitor.wjrId = wjrId;
+                                competitor.nfcTagId = nfcId;
+                                new AddCompetitorTask().execute(competitor);
+                                showStart(competitor);
+
+                                // Update start fragment if displayed
+                                if (currentFrame == FrameType.StartFrag) {
+                                    StartFragment fragment = (StartFragment) getSupportFragmentManager().findFragmentById(R.id.frame_fragmentholder);
+                                    if (fragment != null)
+                                        fragment.setupStartList();
+                                }
+                            }
+                        }
+                    }).setNegativeButton(R.string.cancel,
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialogBox, int id) {
+                                    dialogBox.cancel();
+                                }
+                            }).show();
                 }
             });
             final ArrayAdapter adapter = new ArrayAdapter<>(MainActivity.this,
@@ -326,6 +372,17 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
             listView.setAdapter(adapter);
 
             alertDialog.show();
+        }
+    }
+
+    /**
+     * Adds a new competitor to the database
+     */
+    private class AddCompetitorTask extends AsyncTask<Competitor, Void, Void> {
+        @Override
+        protected Void doInBackground(Competitor... competitors) {
+            database.daoAccess().insertCompetitors(competitors[0]);
+            return null;
         }
     }
 
@@ -352,6 +409,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                     public void onClick(DialogInterface dialogInterface, int which) {
                         new UpdateCompetitorTask().execute(competitor);
                         dialogInterface.dismiss();
+                        updateFinishFrag();
                     }
                 });
         alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, getText(R.string.cancel), new DialogInterface.OnClickListener() {
@@ -375,6 +433,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                         competitor.startTime = System.currentTimeMillis() / 1000;
                         new UpdateCompetitorTask().execute(competitor);
                         dialogInterface.dismiss();
+                        updateFinishFrag();
                     }
                 });
         alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, getText(R.string.cancel), new DialogInterface.OnClickListener() {
@@ -384,5 +443,14 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
             }
         });
         alertDialog.show();
+    }
+
+    // Updates the finish list if the finish fragment is displayed
+    private void updateFinishFrag() {
+        if (currentFrame == FrameType.FinishFrag) {
+            FinishFragment fragment = (FinishFragment) getSupportFragmentManager().findFragmentById(R.id.frame_fragmentholder);
+            if (fragment != null)
+                fragment.setupResultList();
+        }
     }
 }

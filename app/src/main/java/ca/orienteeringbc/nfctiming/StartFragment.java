@@ -63,10 +63,15 @@ public class StartFragment extends Fragment {
 
         if (eventId > 0) {
             new SetupEventName().execute();
-            new SetupStartListTask().execute();
+            setupStartList();
         }
 
         return view;
+    }
+
+    // To be called from Activity when something changes
+    protected void setupStartList() {
+        new SetupStartListTask().execute();
     }
 
     // Fetches competitors and categories from database, initializes button

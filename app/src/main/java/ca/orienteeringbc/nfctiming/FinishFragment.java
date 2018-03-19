@@ -56,7 +56,7 @@ public class FinishFragment extends Fragment {
 
         if (eventId > 0) {
             new SetupEventName().execute();
-            new SetupResultList().execute();
+            setupResultList();
 
             Button uploadResults = view.findViewById(R.id.upload_results);
             uploadResults.setEnabled(true);
@@ -71,7 +71,11 @@ public class FinishFragment extends Fragment {
         return view;
     }
 
-    private class SetupResultList extends AsyncTask<Void, Void, List<Competitor>> {
+    protected void setupResultList() {
+        new SetupResultListTask().execute();
+    }
+
+    private class SetupResultListTask extends AsyncTask<Void, Void, List<Competitor>> {
         @Override
         protected List<Competitor> doInBackground(Void... voids) {
             return database.daoAccess().getCompetitorsByEvent(eventId);
