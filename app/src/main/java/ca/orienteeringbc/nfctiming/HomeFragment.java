@@ -475,8 +475,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
         WjrCompetitorParser xmlParser = new WjrCompetitorParser();
         EventInfo info;
 
-        Log.e("Testing", "Got here 1");
-
         try {
             stream = downloadUrl(urlString);
             info = xmlParser.parse(stream);
@@ -487,9 +485,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
                 stream.close();
             }
         }
-
-        Log.e("Testing", "Got here");
-
+        
         if (info != null) {
             // Add info to DB
             database.daoAccess().addEvent(info.event);
