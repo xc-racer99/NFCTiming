@@ -115,7 +115,6 @@ public class WjrCompetitorParser {
     }
 
     // Processes Class tags in the feed
-    // TODO - Check if while loop end condition is correct
     private WjrCategory readCategory(XmlPullParser parser) throws IOException, XmlPullParserException {
         parser.require(XmlPullParser.START_TAG, ns, "Class");
         int catId = -1;

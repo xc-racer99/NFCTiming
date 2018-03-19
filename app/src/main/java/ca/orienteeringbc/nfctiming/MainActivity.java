@@ -174,7 +174,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
         if (messages != null && messages.length > 0) {
             // Look for a WJR Id
             // TODO
-            // new CompetitorFromWjrIdTask().execute(wjrId);
+            // new CompetitorFromWjrIdTask().execute(wjrId, -1);
         }
 
         // Note, this is an attempt to convert the byte array into a long
@@ -291,8 +291,9 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
         protected void onPostExecute(List<Competitor> competitors) {
             LayoutInflater layoutInflaterAndroid = LayoutInflater.from(MainActivity.this);
             View mView = layoutInflaterAndroid.inflate(R.layout.alert_select_person, null);
-            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(MainActivity.this);
+            final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(MainActivity.this);
             alertDialogBuilder.setView(mView);
+            final AlertDialog alertDialog = alertDialogBuilder.create();
 
             Button addNewCompetitor = mView.findViewById(R.id.add_new_person);
             addNewCompetitor.setOnClickListener(new View.OnClickListener() {
@@ -313,11 +314,12 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                     competitor.wjrId = wjrId;
                     competitor.nfcTagId = nfcId;
                     showStart(competitor);
+                    alertDialog.dismiss();
                 }
             });
             listView.setAdapter(adapter);
 
-            alertDialogBuilder.create().show();
+            alertDialog.show();
         }
     }
 
