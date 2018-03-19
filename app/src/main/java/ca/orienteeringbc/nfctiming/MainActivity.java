@@ -187,7 +187,10 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
         if (messages != null && messages.length > 0) {
             // Look for a WJR Id
             // TODO
-            // new CompetitorFromWjrIdTask().execute(wjrId, -1);
+            /*
+            new CompetitorFromWjrIdTask().execute(wjrId, -1);
+            return;
+            */
         }
 
         // Note, this is an attempt to convert the byte array into a long
@@ -198,8 +201,6 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
         for (int i = 0; i < id_array.length; i++) {
             value += ((long) id_array[i] & 0xffL) << (8 * i);
         }
-
-        Toast.makeText(this, " " + value, Toast.LENGTH_SHORT).show();
 
         new CompetitorFromNfcTagTask().execute(value);
     }
