@@ -22,7 +22,7 @@ public class Competitor {
 
     public int wjrId = -1;
 
-    public int nfcTagId;
+    public long nfcTagId;
 
     public String firstName;
 
@@ -38,5 +38,9 @@ public class Competitor {
         this.wjrEventId = wjrEventId;
         this.firstName = firstName;
         this.lastName = lastName;
+    }
+
+    public String toString() {
+        return firstName + " " + lastName;
     }
 }

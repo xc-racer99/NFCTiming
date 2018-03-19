@@ -32,10 +32,10 @@ public interface DaoAccess {
 
     // Competitor access methods
     @Query("SELECT * FROM Competitor WHERE wjrEventId = :wjrEventId AND nfcTagId = :nfcTagId")
-    Competitor getCompetitorByNfc(int wjrEventId, int nfcTagId);
+    Competitor getCompetitorByNfc(int wjrEventId, long nfcTagId);
 
-    @Query("SELECT * FROM Competitor WHERE wjrEventId = :wjrEventId AND firstName = :firstName AND lastName = :lastName")
-    Competitor getCompetitorByName(int wjrEventId, String firstName, String lastName);
+    @Query("SELECT * FROM Competitor WHERE wjrEventId = :wjrEventId AND wjrId = :wjrId")
+    Competitor getCompetitorByWjrId(int wjrEventId, int wjrId);
 
     @Query("SELECT * FROM Competitor WHERE wjrEventId = :wjrEventId")
     List<Competitor> getCompetitorsByEvent(int wjrEventId);

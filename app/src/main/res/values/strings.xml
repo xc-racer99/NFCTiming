@@ -4,6 +4,14 @@
     <string name="start">Start List</string>
     <string name="finish">Results</string>
 
+    <!-- Main Activity -->
+    <string name="no_nfc">No NFC adapter detected</string>
+    <string name="nfc_disabled">NFC is disabled.  Please enable it in Settings</string>
+    <string name="confirm_start">Confirm Start</string>
+    <string name="confirm_start_msg">Confirm start for %1$s</string>
+    <string name="confirm_finish">Confirm Finish</string>
+    <string name="confirm_finish_msg">Confirm finish for %1$s</string>
+
     <!-- Home Fragment Strings -->
     <string name="club">Club</string>
     <string name="get_clubs">Get Clubs</string>
@@ -35,7 +43,6 @@
     <string name="success">Success</string>
     <string name="first_name">First Name</string>
     <string name="last_name">Last Name</string>
-    <string name="cancel">Cancel</string>
     <string name="no_categories">No categories found.  Have you downloaded the start list?</string>
 
     <!-- Finish/Results fragment -->
@@ -47,4 +54,6 @@
 
     <!-- Common -->
     <string name="no_event">No Event Selected</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
 </resources>
