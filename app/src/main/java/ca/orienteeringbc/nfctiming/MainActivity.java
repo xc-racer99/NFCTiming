@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.nfc.NdefMessage;
+import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
 import android.nfc.tech.NfcA;
@@ -20,6 +21,7 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -31,6 +33,8 @@ import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements HomeFragment.OnEventIdChangeListener {
@@ -43,6 +47,9 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
 
     // Database name
     public static final String DATABASE_NAME = "wjr_database";
+
+    // Mime type of assigned tags
+    public static final String MIME_TEXT_PLAIN = "text/plain";
 
     // Counter to determine if we should reload the frame or not
     private enum FrameType {
@@ -130,8 +137,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
             // Setup an intent filter for all MIME based dispatches
             IntentFilter ndef = new IntentFilter(NfcAdapter.ACTION_NDEF_DISCOVERED);
             try {
-                // TODO - Limit to text/plain only?
-                ndef.addDataType("*/*");
+                ndef.addDataType(MIME_TEXT_PLAIN);
             } catch (IntentFilter.MalformedMimeTypeException e) {
                 throw new RuntimeException("Failed to add MIME", e);
             }
@@ -186,11 +192,30 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
 
         if (messages != null && messages.length > 0) {
             // Look for a WJR Id
-            // TODO
-            /*
-            new CompetitorFromWjrIdTask().execute(wjrId, -1);
-            return;
-            */
+            for (NdefMessage message : messages) {
+                NdefRecord[] records = message.getRecords();
+                for (NdefRecord record : records) {
+                    if (record.getTnf() == NdefRecord.TNF_WELL_KNOWN && Arrays.equals(record.getType(), NdefRecord.RTD_TEXT)) {
+                        // See spec at http://bit.ly/2u2TzV5
+                        byte[] payload = record.getPayload();
+                        String textEncoding = ((payload[0] & 0xFF) == 0) ? "UTF-8" : "UTF-16";
+                        int languageCodeLength = payload[0] & 0x3F;
+                        try {
+                            String string = new String(payload, languageCodeLength + 1, payload.length - languageCodeLength - 1, textEncoding);
+                            if (string.startsWith("WjrId:")) {
+                                // Remove WjrId: from start
+                                int wjrId = Integer.parseInt(string.substring(6));
+                                if (wjrId > 0) {
+                                    new CompetitorFromWjrIdTask().execute(wjrId);
+                                    return;
+                                }
+                            }
+                        } catch (UnsupportedEncodingException e) {
+                            Log.e("TextEncoding Exception", e.toString());
+                        }
+                    }
+                }
+            }
         }
 
         // Note, this is an attempt to convert the byte array into a long
