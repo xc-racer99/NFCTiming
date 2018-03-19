@@ -122,6 +122,7 @@ public class UploadResultsXml {
             serializer.startTag(ns, "Position");
             serializer.attribute(ns, "type", "Course");
             serializer.text(String.valueOf(pos));
+            serializer.endTag(ns, "Position");
 
             // Status
             writeStatus(serializer, "OK");
