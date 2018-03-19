@@ -293,6 +293,12 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
             View mView = layoutInflaterAndroid.inflate(R.layout.alert_select_person, null);
             final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(MainActivity.this);
             alertDialogBuilder.setView(mView);
+            alertDialogBuilder.setNegativeButton(getText(R.string.cancel), new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    dialogInterface.cancel();
+                }
+            });
             final AlertDialog alertDialog = alertDialogBuilder.create();
 
             Button addNewCompetitor = mView.findViewById(R.id.add_new_person);
