@@ -65,6 +65,9 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
     // Event Id
     private int eventId;
 
+    // If we're waiting for an NFC tag to be accepted/denied
+    private boolean queuedSwipe = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -170,6 +173,12 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
             Toast.makeText(this, R.string.no_event, Toast.LENGTH_LONG).show();
             return;
         }
+
+        // Skip if we're waiting
+        if (queuedSwipe)
+            return;
+        else
+            queuedSwipe = true;
 
         // Fetch the tag from the intent
         NdefMessage[] messages = (NdefMessage[]) intent.getParcelableArrayExtra(
@@ -305,6 +314,12 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                     dialogInterface.cancel();
                 }
             });
+            alertDialogBuilder.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                @Override
+                public void onCancel(DialogInterface dialogInterface) {
+                    queuedSwipe = false;
+                }
+            });
             final AlertDialog alertDialog = alertDialogBuilder.create();
 
             Button addNewCompetitor = mView.findViewById(R.id.add_new_person);
@@ -329,6 +344,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                             if (firstNameString.isEmpty() || lastNameString.isEmpty()) {
                                 // No name given, warn
                                 Toast.makeText(MainActivity.this, R.string.no_name, Toast.LENGTH_LONG).show();
+                                dialogInterface.cancel();
                             } else {
                                 Competitor competitor = new Competitor(eventId, firstName.getText().toString(), lastName.getText().toString());
                                 WjrCategory category = (WjrCategory) spinner.getSelectedItem();
@@ -344,6 +360,9 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                                     if (fragment != null)
                                         fragment.setupStartList();
                                 }
+
+                                dialogInterface.dismiss();
+                                alertDialog.dismiss();
                             }
                         }
                     }).setNegativeButton(R.string.cancel,
@@ -400,49 +419,57 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
     // Called when competitor has finished
     private void showFinish(final Competitor competitor) {
         competitor.endTime = System.currentTimeMillis() / 1000;
-        AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
-        alertDialog.setTitle(R.string.confirm_finish);
-        alertDialog.setMessage(getString(R.string.confirm_finish_msg,
-                competitor.firstName + " " + competitor.lastName));
-        alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, getText(R.string.ok),
-                new DialogInterface.OnClickListener() {
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(MainActivity.this);
+        alertDialogBuilder.setTitle(R.string.confirm_finish)
+                .setMessage(getString(R.string.confirm_finish_msg,
+                        competitor.firstName + " " + competitor.lastName))
+                .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialogInterface, int which) {
                         new UpdateCompetitorTask().execute(competitor);
                         dialogInterface.dismiss();
                         updateFinishFrag();
+                    }})
+                .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.cancel();
                     }
-                });
-        alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, getText(R.string.cancel), new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int i) {
-                dialogInterface.cancel();
-            }
-        });
-        alertDialog.show();
+                })
+                .setOnDismissListener(new DialogInterface.OnDismissListener() {
+                    @Override
+                    public void onDismiss(DialogInterface dialogInterface) {
+                        queuedSwipe = false;
+                    }
+                })
+                .show();
     }
 
     // Called to confirm start time
     private void showStart(final Competitor competitor) {
-        AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
-        alertDialog.setTitle(R.string.confirm_start);
-        alertDialog.setMessage(getString(R.string.confirm_start_msg,
-                competitor.firstName + " " + competitor.lastName));
-        alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, getText(R.string.ok),
-                new DialogInterface.OnClickListener() {
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(MainActivity.this);
+        alertDialogBuilder.setTitle(R.string.confirm_start)
+                .setMessage(getString(R.string.confirm_start_msg,
+                        competitor.firstName + " " + competitor.lastName))
+                .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialogInterface, int which) {
                         competitor.startTime = System.currentTimeMillis() / 1000;
                         new UpdateCompetitorTask().execute(competitor);
                         dialogInterface.dismiss();
                         updateFinishFrag();
+                    }})
+                .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.cancel();
                     }
-                });
-        alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, getText(R.string.cancel), new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int i) {
-                dialogInterface.cancel();
-            }
-        });
-        alertDialog.show();
+                })
+                .setOnDismissListener(new DialogInterface.OnDismissListener() {
+                    @Override
+                    public void onDismiss(DialogInterface dialogInterface) {
+                        queuedSwipe = false;
+                    }
+                })
+                .show();
     }
 
     // Updates the finish list if the finish fragment is displayed
