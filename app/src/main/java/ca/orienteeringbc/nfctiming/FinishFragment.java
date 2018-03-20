@@ -78,7 +78,7 @@ public class FinishFragment extends Fragment {
     private class SetupResultListTask extends AsyncTask<Void, Void, List<Competitor>> {
         @Override
         protected List<Competitor> doInBackground(Void... voids) {
-            return database.daoAccess().getCompetitorsByEvent(eventId);
+            return database.daoAccess().getCompetitorsByEventTimed(eventId);
         }
 
         @Override

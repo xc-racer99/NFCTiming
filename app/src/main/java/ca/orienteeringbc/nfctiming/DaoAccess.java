@@ -37,13 +37,16 @@ public interface DaoAccess {
     @Query("SELECT * FROM Competitor WHERE wjrEventId = :wjrEventId AND wjrId = :wjrId")
     Competitor getCompetitorByWjrId(int wjrEventId, int wjrId);
 
-    @Query("SELECT * FROM Competitor WHERE wjrEventId = :wjrEventId")
-    List<Competitor> getCompetitorsByEvent(int wjrEventId);
+    @Query("SELECT * FROM Competitor WHERE wjrEventId = :wjrEventId ORDER BY LOWER(lastName)")
+    List<Competitor> getCompetitorsByEventAlphabetically(int wjrEventId);
+
+    @Query("SELECT * FROM Competitor WHERE wjrEventId = :wjrEventId ORDER BY endTime - startTime")
+    List<Competitor> getCompetitorsByEventTimed(int wjrEventId);
 
     @Query("SELECT * FROM Competitor WHERE wjrEventId = :wjrEventId AND startTime = 0 ORDER BY LOWER(lastName) ASC")
     List<Competitor> getUnstartedCompetitorsByEvent(int wjrEventId);
 
-    @Query("SELECT * FROM Competitor WHERE wjrEventId = :wjrEventId AND wjrCategoryId = :wjrCatId ORDER BY startTime - endTime")
+    @Query("SELECT * FROM Competitor WHERE wjrEventId = :wjrEventId AND wjrCategoryId = :wjrCatId ORDER BY endTime - startTime")
     List<Competitor> getResultsByCategory(int wjrEventId, int wjrCatId);
 
     // WjrCategory setter

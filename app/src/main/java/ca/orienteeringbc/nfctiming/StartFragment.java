@@ -79,7 +79,7 @@ public class StartFragment extends Fragment {
         @Override
         protected List<Competitor> doInBackground(Void... voids) {
             categories = database.daoAccess().getCategoryById(eventId);
-            return database.daoAccess().getCompetitorsByEvent(eventId);
+            return database.daoAccess().getCompetitorsByEventAlphabetically(eventId);
         }
 
         @Override
