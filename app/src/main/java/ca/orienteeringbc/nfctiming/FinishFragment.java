@@ -18,6 +18,10 @@ import android.widget.Toast;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.List;
 
 
@@ -59,6 +63,12 @@ public class FinishFragment extends Fragment {
             setupResultList();
 
             Button uploadResults = view.findViewById(R.id.upload_results);
+
+            String pass = sharedPrefs.getString(MainActivity.WJR_USERNAME, "");
+            String user = sharedPrefs.getString(MainActivity.WJR_PASSWORD, "");
+            if (!pass.isEmpty() && !user.isEmpty())
+                uploadResults.setEnabled(true);
+
             uploadResults.setEnabled(true);
             uploadResults.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -105,14 +115,22 @@ public class FinishFragment extends Fragment {
 
     // Uploads a results xml
     private class UploadResultsTask extends AsyncTask<Void, Void, Boolean> {
+        private String res = null;
 
-        // TODO - Currently this saves the file to the SDCard
         @Override
         protected Boolean doInBackground(Void... voids) {
-            FileOutputStream fos;
+            OutputStream out = null;
             try {
-                fos = new FileOutputStream(new File(Environment.getExternalStorageDirectory(), "test.xml"));
-                new UploadResultsXml().makeXml(fos, database, eventId);
+                // TODO - Use the URL once WJR is fixed (I think)
+                out = new FileOutputStream(new File(Environment.getExternalStorageDirectory(), "test.xml"));
+                /*
+                HttpURLConnection connection = uploadUrl("https://whyjustrun.ca/iof/3.0/events/" + eventId + "/result_list.xml");
+                out = connection.getOutputStream();
+                */
+                new UploadResultsXml().makeXml(out, database, eventId);
+
+                //res = connection.getResponseMessage();
+
             } catch (IOException e) {
                 return false;
             }
@@ -121,10 +139,26 @@ public class FinishFragment extends Fragment {
 
         @Override
         protected void onPostExecute(Boolean success) {
-            if (success)
-                Toast.makeText(getActivity(), R.string.success_uploading, Toast.LENGTH_SHORT).show();
-            else
+            if (success) {
+                Toast.makeText(getActivity(), "Server Replied " + res, Toast.LENGTH_SHORT).show();
+            } else {
                 Toast.makeText(getActivity(), R.string.error_uploading, Toast.LENGTH_LONG).show();
+            }
         }
+    }
+
+    // Given a string representation of a URL, sets up a connection and gets
+    // an output stream.
+    private HttpURLConnection uploadUrl(String urlString) throws IOException {
+        URL url = new URL(urlString);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setReadTimeout(10000 /* milliseconds */);
+        conn.setConnectTimeout(15000 /* milliseconds */);
+        conn.setRequestMethod("POST");
+        conn.setDoOutput(true);
+        conn.setChunkedStreamingMode(0);
+        // Starts the connection
+        conn.connect();
+        return conn;
     }
 }

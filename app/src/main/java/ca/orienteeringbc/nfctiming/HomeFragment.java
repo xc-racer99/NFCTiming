@@ -26,7 +26,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.Authenticator;
 import java.net.HttpURLConnection;
+import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -122,10 +124,18 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
         wjrPassword = view.findViewById(R.id.wjr_pass);
         wjrUsername = view.findViewById(R.id.wjr_user);
 
-        String savedUser = sharedPref.getString(WJR_USERNAME, "");
-        String savedPass = sharedPref.getString(WJR_PASSWORD, "");
+        final String savedUser = sharedPref.getString(WJR_USERNAME, "");
+        final String savedPass = sharedPref.getString(WJR_PASSWORD, "");
         wjrUsername.setText(savedUser);
         wjrPassword.setText(savedPass);
+
+        if (!savedPass.isEmpty() && !savedPass.isEmpty()) {
+            Authenticator.setDefault(new Authenticator() {
+                protected PasswordAuthentication getPasswordAuthentication() {
+                    return new PasswordAuthentication(savedUser, savedPass.toCharArray());
+                }
+            });
+        }
 
         // Set button listener
         Button savePrefs = view.findViewById(R.id.save_credentials);
@@ -215,9 +225,20 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
                 break;
             case R.id.save_credentials:
                 SharedPreferences.Editor editor = sharedPref.edit();
-                editor.putString(WJR_USERNAME, wjrUsername.getText().toString());
-                editor.putString(WJR_PASSWORD, wjrPassword.getText().toString());
+                final String username = wjrUsername.getText().toString();
+                final String password = wjrPassword.getText().toString();
+                editor.putString(WJR_USERNAME, username);
+                editor.putString(WJR_PASSWORD, password);
                 editor.apply();
+
+                if (!password.isEmpty() && !username.isEmpty()) {
+                    Authenticator.setDefault(new Authenticator() {
+                        protected PasswordAuthentication getPasswordAuthentication() {
+                            return new PasswordAuthentication(username, password.toCharArray());
+                        }
+                    });
+                }
+
                 break;
         }
     }
@@ -540,12 +561,12 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
     }
 
     // This class represents an event and it's contents
-    public static class EventInfo {
+    static class EventInfo {
         WjrEvent event;
         List<WjrCategory> categories;
         List<Competitor> competitors;
 
-        public EventInfo() {
+        EventInfo() {
             categories = new ArrayList<>();
             competitors = new ArrayList<>();
         }
