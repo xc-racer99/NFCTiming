@@ -12,6 +12,10 @@
     <string name="confirm_finish">Confirm Finish</string>
     <string name="confirm_finish_msg">Confirm finish for %1$s</string>
 
+    <string name="enable_nfc">Enable NFC</string>
+    <string name="enable_nfc_reason">Go to Settings to enable NFC</string>
+    <string name="go">Go</string>
+
     <!-- Home Fragment Strings -->
     <string name="club">Club</string>
     <string name="get_clubs">Get Clubs</string>

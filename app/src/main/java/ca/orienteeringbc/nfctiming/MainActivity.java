@@ -18,6 +18,7 @@ import android.nfc.tech.NfcV;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.FragmentTransaction;
@@ -160,6 +161,25 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
         super.onResume();
 
         if (mAdapter != null) {
+            if (!mAdapter.isEnabled()) {
+                new AlertDialog.Builder(this).setTitle(R.string.enable_nfc)
+                        .setMessage(R.string.enable_nfc_reason)
+                        .setPositiveButton(R.string.go, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                Intent setNfc = new Intent(Settings.ACTION_WIRELESS_SETTINGS);
+                                startActivity(setNfc);
+                                dialogInterface.dismiss();
+                            }
+                        })
+                        .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                dialogInterface.dismiss();
+                            }
+                        })
+                        .create().show();
+            }
+
             mAdapter.enableForegroundDispatch(this, mPendingIntent, mFilters, mTechLists);
         }
     }
