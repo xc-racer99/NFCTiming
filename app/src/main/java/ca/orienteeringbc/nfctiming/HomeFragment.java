@@ -49,12 +49,12 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
     // A list of all clubs in WJR database
     private Spinner clubSpinner;
     private List<Entry> mClubList = new ArrayList<>();
-    private ArrayAdapter clubAdapter;
+    private ArrayAdapter<Entry> clubAdapter;
 
     // All events for the club
     private Spinner eventSpinner;
     private List<Entry> mEventList = new ArrayList<>();
-    private ArrayAdapter eventAdapter;
+    private ArrayAdapter<Entry> eventAdapter;
 
     // Buttons
     private Button getCompetitors;
@@ -75,7 +75,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
 
     // Interface to notify Activity of change in eventId
     public interface OnEventIdChangeListener {
-        public void onEventIdChange(int wjrId);
+        void onEventIdChange(int wjrId);
     }
 
     @TargetApi(23)
