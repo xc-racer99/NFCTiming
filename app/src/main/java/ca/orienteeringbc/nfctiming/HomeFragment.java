@@ -228,9 +228,22 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
         switch (parent.getId())
         {
             case R.id.club_spinner:
-                clubId = mClubList.get(position).getId();
+                int newId = mClubList.get(position).getId();
+                if (newId != clubId) {
+                    clubId = newId;
+                    try {
+                        List<Entry> newEvents = loadEventXmlFromDisk();
+                        eventAdapter.clear();
+                        eventAdapter.addAll(newEvents);
+                    } catch (IOException e) {
+                        eventAdapter.clear();
+                    } catch (XmlPullParserException e) {
+                        eventAdapter.clear();
+                    }
+                }
                 editor.putInt(SELECTED_CLUB_KEY, clubId);
                 getEvents.setEnabled(true);
+
                 break;
             case R.id.event_spinner:
                 eventId = mEventList.get(position).getId();
