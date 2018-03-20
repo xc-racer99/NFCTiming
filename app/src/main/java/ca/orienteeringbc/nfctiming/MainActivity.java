@@ -17,6 +17,7 @@ import android.nfc.tech.NfcF;
 import android.nfc.tech.NfcV;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.FragmentTransaction;
@@ -187,10 +188,14 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
             queuedSwipe = true;
 
         // Fetch the tag from the intent
-        NdefMessage[] messages = (NdefMessage[]) intent.getParcelableArrayExtra(
-                NfcAdapter.EXTRA_NDEF_MESSAGES);
+        Parcelable[] rawMessages = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
 
-        if (messages != null && messages.length > 0) {
+        if (rawMessages != null && rawMessages.length > 0) {
+            NdefMessage[] messages = new NdefMessage[rawMessages.length];
+            for (int i = 0; i < rawMessages.length; i++) {
+                messages[i] = (NdefMessage) rawMessages[i];
+            }
+
             // Look for a WJR Id
             for (NdefMessage message : messages) {
                 NdefRecord[] records = message.getRecords();
@@ -198,10 +203,15 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                     if (record.getTnf() == NdefRecord.TNF_WELL_KNOWN && Arrays.equals(record.getType(), NdefRecord.RTD_TEXT)) {
                         // See spec at http://bit.ly/2u2TzV5
                         byte[] payload = record.getPayload();
-                        String textEncoding = ((payload[0] & 0xFF) == 0) ? "UTF-8" : "UTF-16";
-                        int languageCodeLength = payload[0] & 0x3F;
+                        String textEncoding = ((payload[0] & 0200) == 0) ? "UTF-8" : "UTF-16";
+                        int languageCodeLength = payload[0] & 0077;
+
                         try {
-                            String string = new String(payload, languageCodeLength + 1, payload.length - languageCodeLength - 1, textEncoding);
+                            String string = new String(payload,
+                                    languageCodeLength + 1,
+                                    payload.length - languageCodeLength - 1,
+                                    textEncoding);
+                            Log.d("Payload string is", string);
                             if (string.startsWith("WjrId:")) {
                                 // Remove WjrId: from start
                                 int wjrId = Integer.parseInt(string.substring(6));
