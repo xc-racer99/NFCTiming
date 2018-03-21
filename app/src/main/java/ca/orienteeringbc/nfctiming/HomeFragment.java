@@ -106,7 +106,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
             mCallback = (OnEventIdChangeListener) activity;
         } catch (ClassCastException e) {
             throw new ClassCastException(activity.toString()
-                    + " must implement OnHeadlineSelectedListener");
+                    + " must implement OnEventIdChangeListener");
         }
 
     }
@@ -344,6 +344,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
                     eventAdapter.notifyDataSetChanged();
                     updateEventId();
                 }
+            } else {
+                Toast.makeText(getActivity().getApplicationContext(), R.string.error_connect, Toast.LENGTH_LONG).show();
             }
         }
     }
@@ -370,6 +372,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
                 eventAdapter.notifyDataSetChanged();
                 eventSpinner.setSelection(0);
                 updateEventId();
+            } else {
+                Toast.makeText(getActivity().getApplicationContext(), R.string.error_connect, Toast.LENGTH_LONG).show();
             }
         }
     }

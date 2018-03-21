@@ -40,7 +40,7 @@
     <string name="name">Name</string>
     <string name="category">Category</string>
     <string name="status">Status</string>
-    <string name="error_connect">Error Connecting</string>
+    <string name="error_connect">Error fetching data</string>
     <string name="connected">Connected</string>
     <string name="stream_assigned">Streams Assigned</string>
     <string name="downloading">Downloading %1$d</string>
