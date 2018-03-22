@@ -309,7 +309,10 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                 new SelectCompetitorTask().execute(nfcId, Long.valueOf(-1));
             } else {
                 // Un-assigned card, at the finish
-                showFinish(competitor);
+                if (competitor.endTime > 0)
+                    showFinish(competitor, false);
+                else
+                    showFinish(competitor, true);
             }
         }
     }
@@ -335,7 +338,10 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
             } else {
                 // Yay!  Pre-assigned card, pre-registered.  Now check if finished or not
                 if (competitor.startTime > 0)
-                    showFinish(competitor);
+                    if (competitor.endTime > 0)
+                        showFinish(competitor, false);
+                    else
+                        showFinish(competitor, true);
                 else
                     showStart(competitor);
             }
@@ -473,12 +479,14 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
     }
 
     // Called when competitor has finished
-    private void showFinish(final Competitor competitor) {
+    private void showFinish(final Competitor competitor, boolean first) {
         competitor.endTime = System.currentTimeMillis() / 1000;
         AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(MainActivity.this);
+        if (first)
+            alertDialogBuilder.setMessage(getString(R.string.confirm_finish_msg, competitor.toString()));
+        else
+            alertDialogBuilder.setMessage(getString(R.string.confirm_finish_replacement_msg, competitor.toString()));
         alertDialogBuilder.setTitle(R.string.confirm_finish)
-                .setMessage(getString(R.string.confirm_finish_msg,
-                        competitor.firstName + " " + competitor.lastName))
                 .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialogInterface, int which) {
                         new UpdateCompetitorTask().execute(competitor);

@@ -11,6 +11,7 @@
     <string name="confirm_start_msg">Confirm start for %1$s</string>
     <string name="confirm_finish">Confirm Finish</string>
     <string name="confirm_finish_msg">Confirm finish for %1$s</string>
+    <string name="confirm_finish_replacement_msg">Confirm finish for %1$s?  They already have a finish time.</string>
 
     <string name="enable_nfc">Enable NFC</string>
     <string name="enable_nfc_reason">Go to Settings to enable NFC</string>
