@@ -7,6 +7,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v4.app.Fragment;
+import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,6 +24,8 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
+
+import static android.util.Base64.NO_WRAP;
 
 
 /**
@@ -121,16 +124,12 @@ public class FinishFragment extends Fragment {
         protected Boolean doInBackground(Void... voids) {
             OutputStream out = null;
             try {
-                // TODO - Use the URL once WJR is fixed (I think)
-                out = new FileOutputStream(new File(Environment.getExternalStorageDirectory(), "test.xml"));
-                /*
                 HttpURLConnection connection = uploadUrl("https://whyjustrun.ca/iof/3.0/events/" + eventId + "/result_list.xml");
                 out = connection.getOutputStream();
-                */
+
                 new UploadResultsXml().makeXml(out, database, eventId);
 
-                //res = connection.getResponseMessage();
-
+                res = connection.getResponseMessage();
             } catch (IOException e) {
                 return false;
             }
@@ -150,6 +149,11 @@ public class FinishFragment extends Fragment {
     // Given a string representation of a URL, sets up a connection and gets
     // an output stream.
     private HttpURLConnection uploadUrl(String urlString) throws IOException {
+        SharedPreferences sharedPrefs = getActivity().getPreferences(Context.MODE_PRIVATE);
+        String pass = sharedPrefs.getString(MainActivity.WJR_USERNAME, "");
+        String user = sharedPrefs.getString(MainActivity.WJR_PASSWORD, "");
+        final String basicAuth = "Basic " + Base64.encodeToString((pass + ":" + user).getBytes(), Base64.NO_WRAP);
+
         URL url = new URL(urlString);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setReadTimeout(10000 /* milliseconds */);
@@ -157,6 +161,8 @@ public class FinishFragment extends Fragment {
         conn.setRequestMethod("POST");
         conn.setDoOutput(true);
         conn.setChunkedStreamingMode(0);
+        conn.setRequestProperty("Authorization", basicAuth);
+
         // Starts the connection
         conn.connect();
         return conn;

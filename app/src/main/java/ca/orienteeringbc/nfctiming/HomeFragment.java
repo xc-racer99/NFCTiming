@@ -124,18 +124,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
         wjrPassword = view.findViewById(R.id.wjr_pass);
         wjrUsername = view.findViewById(R.id.wjr_user);
 
-        final String savedUser = sharedPref.getString(WJR_USERNAME, "");
-        final String savedPass = sharedPref.getString(WJR_PASSWORD, "");
-        wjrUsername.setText(savedUser);
-        wjrPassword.setText(savedPass);
-
-        if (!savedPass.isEmpty() && !savedPass.isEmpty()) {
-            Authenticator.setDefault(new Authenticator() {
-                protected PasswordAuthentication getPasswordAuthentication() {
-                    return new PasswordAuthentication(savedUser, savedPass.toCharArray());
-                }
-            });
-        }
+        wjrUsername.setText(sharedPref.getString(WJR_USERNAME, ""));
+        wjrPassword.setText(sharedPref.getString(WJR_PASSWORD, ""));
 
         // Set button listener
         Button savePrefs = view.findViewById(R.id.save_credentials);
@@ -225,19 +215,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
                 break;
             case R.id.save_credentials:
                 SharedPreferences.Editor editor = sharedPref.edit();
-                final String username = wjrUsername.getText().toString();
-                final String password = wjrPassword.getText().toString();
-                editor.putString(WJR_USERNAME, username);
-                editor.putString(WJR_PASSWORD, password);
+                editor.putString(WJR_USERNAME, wjrUsername.getText().toString());
+                editor.putString(WJR_PASSWORD, wjrPassword.getText().toString());
                 editor.apply();
-
-                if (!password.isEmpty() && !username.isEmpty()) {
-                    Authenticator.setDefault(new Authenticator() {
-                        protected PasswordAuthentication getPasswordAuthentication() {
-                            return new PasswordAuthentication(username, password.toCharArray());
-                        }
-                    });
-                }
 
                 break;
         }
