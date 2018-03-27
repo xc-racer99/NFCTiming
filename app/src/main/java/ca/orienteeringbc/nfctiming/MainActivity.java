@@ -57,7 +57,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
     private static final String STATE_CURRENT_FRAME = "currentFrame";
 
     // Counter to determine if we should reload the frame or not
-    private enum FrameType {
+    enum FrameType {
         HomeFrag,
         StartFrag,
         FinishFrag,

@@ -1,11 +1,11 @@
 package ca.orienteeringbc.nfctiming;
 
+import android.app.Activity;
 import android.arch.persistence.room.Room;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.v4.app.Fragment;
 import android.util.Base64;
 import android.view.LayoutInflater;
@@ -16,17 +16,12 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
-
-import static android.util.Base64.NO_WRAP;
-
 
 /**
  * A simple {@link Fragment} subclass.
@@ -73,7 +68,7 @@ public class FinishFragment extends Fragment {
             uploadResults.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    new UploadResultsTask().execute();
+                    new UploadResultsTask(getActivity(), database, eventId).execute();
                 }
             });
         }
@@ -86,16 +81,26 @@ public class FinishFragment extends Fragment {
         super.onResume();
 
         if (eventId > 0) {
-            new SetupEventName().execute();
+            new SetupEventNameTask(getActivity(), database, eventId).execute();
             setupResultList();
         }
     }
 
     protected void setupResultList() {
-        new SetupResultListTask().execute();
+        new SetupResultListTask(getActivity(), database, eventId).execute();
     }
 
-    private class SetupResultListTask extends AsyncTask<Void, Void, List<Competitor>> {
+    private static class SetupResultListTask extends AsyncTask<Void, Void, List<Competitor>> {
+        private final WeakReference<Activity> weakActivity;
+        private WjrDatabase database;
+        private int eventId;
+
+        SetupResultListTask(Activity activity, WjrDatabase database, int eventId) {
+            weakActivity = new WeakReference<>(activity);
+            this.database = database;
+            this.eventId = eventId;
+        }
+
         @Override
         protected List<Competitor> doInBackground(Void... voids) {
             return database.daoAccess().getCompetitorsByEventTimed(eventId);
@@ -103,14 +108,39 @@ public class FinishFragment extends Fragment {
 
         @Override
         protected void onPostExecute(List<Competitor> competitors) {
-            ListView listView = view.findViewById(R.id.results_listview);
-            FinishArrayAdapter adapter = new FinishArrayAdapter(getActivity(), competitors);
-            listView.setAdapter(adapter);
+            // Re-acquire a strong reference to the activity, and verify
+            // that it still exists and is active.
+            final Activity activity = weakActivity.get();
+            if (activity == null
+                    || activity.isFinishing()
+                    || activity.isDestroyed()) {
+                // activity is no longer valid, don't do anything!
+                return;
+            }
+
+            // The activity is still valid
+            MainActivity mainActivity = (MainActivity) weakActivity.get();
+            if (mainActivity.currentFrame == MainActivity.FrameType.FinishFrag) {
+                FinishFragment fragment = (FinishFragment) mainActivity.getSupportFragmentManager().findFragmentById(R.id.frame_fragmentholder);
+                ListView listView = fragment.view.findViewById(R.id.results_listview);
+                FinishArrayAdapter adapter = new FinishArrayAdapter(activity, competitors);
+                listView.setAdapter(adapter);
+            }
         }
     }
 
     // Sets the event name field
-    private class SetupEventName extends AsyncTask<Void, Void, String> {
+    private static class SetupEventNameTask extends AsyncTask<Void, Void, String> {
+        private final WeakReference<Activity> weakActivity;
+        private WjrDatabase database;
+        private int eventId;
+
+        SetupEventNameTask(Activity activity, WjrDatabase database, int eventId) {
+            weakActivity = new WeakReference<>(activity);
+            this.database = database;
+            this.eventId = eventId;
+        }
+
         @Override
         protected String doInBackground(Void... voids) {
             return database.daoAccess().getEventNameById(eventId);
@@ -118,20 +148,46 @@ public class FinishFragment extends Fragment {
 
         @Override
         protected void onPostExecute(String name) {
-            TextView eventName = view.findViewById(R.id.event_title);
-            eventName.setText(name);
+            // Re-acquire a strong reference to the activity, and verify
+            // that it still exists and is active.
+            final Activity activity = weakActivity.get();
+            if (activity == null
+                    || activity.isFinishing()
+                    || activity.isDestroyed()) {
+                // activity is no longer valid, don't do anything!
+                return;
+            }
+
+            // The activity is still valid
+            MainActivity mainActivity = (MainActivity) weakActivity.get();
+            if (mainActivity.currentFrame == MainActivity.FrameType.FinishFrag) {
+                FinishFragment fragment = (FinishFragment) mainActivity.getSupportFragmentManager().findFragmentById(R.id.frame_fragmentholder);
+                TextView eventName = fragment.view.findViewById(R.id.event_title);
+                eventName.setText(name);
+            }
         }
     }
 
     // Uploads a results xml
-    private class UploadResultsTask extends AsyncTask<Void, Void, Boolean> {
+    private static class UploadResultsTask extends AsyncTask<Void, Void, Boolean> {
         private String res = null;
+        private final WeakReference<Activity> weakActivity;
+        private WjrDatabase database;
+        private int eventId;
+
+        UploadResultsTask(Activity activity, WjrDatabase database, int eventId) {
+            weakActivity = new WeakReference<>(activity);
+            this.database = database;
+            this.eventId = eventId;
+        }
 
         @Override
         protected Boolean doInBackground(Void... voids) {
-            OutputStream out = null;
+            OutputStream out;
             try {
-                HttpURLConnection connection = uploadUrl("https://whyjustrun.ca/iof/3.0/events/" + eventId + "/result_list.xml");
+                HttpURLConnection connection = uploadUrl("https://whyjustrun.ca/iof/3.0/events/" + eventId + "/result_list.xml", weakActivity);
+                if (connection == null)
+                    return false;
                 out = connection.getOutputStream();
 
                 new UploadResultsXml().makeXml(out, database, eventId);
@@ -145,18 +201,36 @@ public class FinishFragment extends Fragment {
 
         @Override
         protected void onPostExecute(Boolean success) {
+            // Re-acquire a strong reference to the activity, and verify
+            // that it still exists and is active.
+            final Activity activity = weakActivity.get();
+            if (activity == null
+                    || activity.isFinishing()
+                    || activity.isDestroyed()) {
+                // activity is no longer valid, don't do anything!
+                return;
+            }
             if (success) {
-                Toast.makeText(getActivity(), "Server Replied " + res, Toast.LENGTH_SHORT).show();
+                Toast.makeText(activity, "Server Replied " + res, Toast.LENGTH_SHORT).show();
             } else {
-                Toast.makeText(getActivity(), R.string.error_uploading, Toast.LENGTH_LONG).show();
+                Toast.makeText(activity, R.string.error_uploading, Toast.LENGTH_LONG).show();
             }
         }
     }
 
     // Given a string representation of a URL, sets up a connection and gets
     // an output stream.
-    private HttpURLConnection uploadUrl(String urlString) throws IOException {
-        SharedPreferences sharedPrefs = getActivity().getPreferences(Context.MODE_PRIVATE);
+    private static HttpURLConnection uploadUrl(String urlString, WeakReference<Activity> weakActivity) throws IOException {
+        // Re-acquire a strong reference to the activity, and verify
+        // that it still exists and is active.
+        final Activity activity = weakActivity.get();
+        if (activity == null
+                || activity.isFinishing()
+                || activity.isDestroyed()) {
+            // activity is no longer valid, don't do anything!
+            return null;
+        }
+        SharedPreferences sharedPrefs = activity.getPreferences(Context.MODE_PRIVATE);
         String pass = sharedPrefs.getString(MainActivity.WJR_USERNAME, "");
         String user = sharedPrefs.getString(MainActivity.WJR_PASSWORD, "");
         final String basicAuth = "Basic " + Base64.encodeToString((pass + ":" + user).getBytes(), Base64.NO_WRAP);

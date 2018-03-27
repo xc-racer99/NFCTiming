@@ -46,7 +46,7 @@ public class StartListArrayAdapter extends ArrayAdapter<Competitor> {
     @Override
     @NonNull
     public View getView(int position, View convertView, @NonNull ViewGroup parent) {
-        View view = null;
+        View view;
         if (convertView == null) {
             LayoutInflater inflater = context.getLayoutInflater();
             view = inflater.inflate(R.layout.list_start, null);
@@ -64,7 +64,7 @@ public class StartListArrayAdapter extends ArrayAdapter<Competitor> {
                             if (competitor.wjrCategoryId != newId) {
                                 Log.d("Update", "Updating competitor's class");
                                 competitor.wjrCategoryId = newId;
-                                new UpdateCompetitorTask().execute((Competitor) viewHolder.spinner.getTag());
+                                new UpdateCompetitorTask(database).execute((Competitor) viewHolder.spinner.getTag());
                             }
                         }
 
@@ -83,7 +83,7 @@ public class StartListArrayAdapter extends ArrayAdapter<Competitor> {
         }
         ViewHolder holder = (ViewHolder) view.getTag();
         Competitor competitor = list.get(position);
-        holder.textView.setText(competitor.firstName + " " + competitor.lastName);
+        holder.textView.setText(competitor.toString());
         holder.spinner.setSelection(indexFromId(competitor.wjrCategoryId));
         return view;
     }
@@ -96,7 +96,13 @@ public class StartListArrayAdapter extends ArrayAdapter<Competitor> {
         return 0;
     }
 
-    private class UpdateCompetitorTask extends AsyncTask<Competitor, Void, Boolean> {
+    private static class UpdateCompetitorTask extends AsyncTask<Competitor, Void, Boolean> {
+        private WjrDatabase database;
+
+        UpdateCompetitorTask(WjrDatabase database) {
+            this.database = database;
+        }
+
         @Override
         protected  Boolean doInBackground(Competitor... competitor) {
             database.daoAccess().updateCompetitor(competitor);

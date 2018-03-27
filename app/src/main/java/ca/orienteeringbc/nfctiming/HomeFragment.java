@@ -26,9 +26,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.Authenticator;
+import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
-import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -68,9 +67,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
 
     // SharedPrefs
     private SharedPreferences sharedPref;
-
-    // Database
-    private WjrDatabase database;
 
     // Callback for Activity
     OnEventIdChangeListener mCallback;
@@ -140,7 +136,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
 
         // Setup club spinner and entries
         try {
-            List<Entry> tempClubList = loadClubXmlFromDisk();
+            List<Entry> tempClubList = loadClubXmlFromDisk(new WeakReference<Activity>(getActivity()));
             if (tempClubList != null)
                 mClubList = tempClubList;
         } catch (IOException e) {
@@ -161,7 +157,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
 
         // Setup event spinner and entries
         try {
-            List<Entry> tempEventList = loadEventXmlFromDisk();
+            List<Entry> tempEventList = loadEventXmlFromDisk(new WeakReference<Activity>(getActivity()), clubId);
             if (tempEventList != null)
                 mEventList = tempEventList;
         } catch (IOException e) {
@@ -180,11 +176,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
             getCompetitors.setEnabled(true);
         }
 
-        // Initialize database
-        database = Room.databaseBuilder(getActivity().getApplicationContext(), WjrDatabase.class, MainActivity.DATABASE_NAME)
-                .fallbackToDestructiveMigration()
-                .build();
-
         return view;
     }
 
@@ -192,7 +183,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.get_clubs:
-                new DownloadClubTask().execute("https://whyjustrun.ca/iof/3.0/organization_list.xml");
+                new DownloadClubTask(getActivity()).execute("https://whyjustrun.ca/iof/3.0/organization_list.xml");
                 break;
             case R.id.get_events:
                 Log.d("ClubId", "" + clubId);
@@ -203,14 +194,14 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
                     long start = now - 604800;
                     long end = now + 604800;
                     String url = "https://whyjustrun.ca/events.xml?iof_version=3.0&start=" + start + "&end=" + end + "&club_id=" + clubId;
-                    new DownloadEventTask().execute(url);
+                    new DownloadEventTask(getActivity(), clubId).execute(url);
                 }
                 break;
             case R.id.get_competitors:
                 if (eventId > 0) {
                     String url = "https://whyjustrun.ca/iof/3.0/events/" + eventId + "/entry_list.xml";
                     Log.e("Test", "Url is " + url);
-                    new DownloadEntryListTask().execute(url);
+                    new DownloadEntryListTask(getActivity()).execute(url);
                 }
                 break;
             case R.id.save_credentials:
@@ -233,9 +224,11 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
                 if (newId != clubId) {
                     clubId = newId;
                     try {
-                        List<Entry> newEvents = loadEventXmlFromDisk();
-                        eventAdapter.clear();
-                        eventAdapter.addAll(newEvents);
+                        List<Entry> newEvents = loadEventXmlFromDisk(new WeakReference<Activity>(getActivity()), clubId);
+                        if (newEvents != null) {
+                            eventAdapter.clear();
+                            eventAdapter.addAll(newEvents);
+                        }
                     } catch (IOException e) {
                         eventAdapter.clear();
                     } catch (XmlPullParserException e) {
@@ -280,7 +273,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
     }
 
     // Returns position in ArrayList by id
-    private int findPositionById(List<Entry> entries, int id) {
+    private static int findPositionById(List<Entry> entries, int id) {
         for (int i = 0; i < entries.size(); i++)
             if (entries.get(i).getId() == id)
                 return i;
@@ -288,12 +281,17 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
     }
 
     // Implementation of AsyncTask used to download XML from WJR for Clubs
-    private class DownloadClubTask extends AsyncTask<String, Void, List<Entry>> {
+    private static class DownloadClubTask extends AsyncTask<String, Void, List<Entry>> {
+        private final WeakReference<Activity> weakActivity;
+
+        DownloadClubTask(Activity activity) {
+            weakActivity = new WeakReference<>(activity);
+        }
 
         @Override
         protected List<Entry> doInBackground(String... urls) {
             try {
-                return loadClubXmlFromNetwork(urls[0]);
+                return loadClubXmlFromNetwork(urls[0], weakActivity);
             } catch (IOException e) {
                 return null;
             } catch (XmlPullParserException e) {
@@ -303,40 +301,63 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
 
         @Override
         protected void onPostExecute(List<Entry> entries) {
-            if (entries != null) {
-                clubAdapter.clear();
-                clubAdapter.addAll(entries);
-                clubAdapter.notifyDataSetChanged();
+            // Re-acquire a strong reference to the activity, and verify
+            // that it still exists and is active.
+            Activity activity = weakActivity.get();
+            if (activity == null
+                    || activity.isFinishing()
+                    || activity.isDestroyed()) {
+                // activity is no longer valid, don't do anything!
+                return;
+            }
 
-                getEvents.setEnabled(true);
+            // The activity is still valid
+            MainActivity mainActivity = (MainActivity) weakActivity.get();
+            if (mainActivity.currentFrame == MainActivity.FrameType.HomeFrag) {
+                HomeFragment fragment = (HomeFragment) mainActivity.getSupportFragmentManager().findFragmentById(R.id.frame_fragmentholder);
+                // Do whatever with fragment
+                if (entries != null) {
+                    fragment.clubAdapter.clear();
+                    fragment.clubAdapter.addAll(entries);
+                    fragment.clubAdapter.notifyDataSetChanged();
 
-                int pos = findPositionById(mClubList, clubId);
-                if (pos >= 0) {
-                    clubSpinner.setSelection(pos);
+                    fragment.getEvents.setEnabled(true);
+
+                    int pos = findPositionById(fragment.mClubList, fragment.clubId);
+                    if (pos >= 0) {
+                        fragment.clubSpinner.setSelection(pos);
+                    } else {
+                        fragment.clubSpinner.setSelection(0);
+                        SharedPreferences.Editor editor = fragment.sharedPref.edit();
+                        editor.putInt(SELECTED_CLUB_KEY, -1);
+                        editor.apply();
+
+                        // Also clear event list
+                        fragment.eventAdapter.clear();
+                        fragment.eventAdapter.notifyDataSetChanged();
+                        fragment.updateEventId();
+                    }
                 } else {
-                    clubSpinner.setSelection(0);
-                    SharedPreferences.Editor editor = sharedPref.edit();
-                    editor.putInt(SELECTED_CLUB_KEY, -1);
-                    editor.apply();
-
-                    // Also clear event list
-                    eventAdapter.clear();
-                    eventAdapter.notifyDataSetChanged();
-                    updateEventId();
+                    Toast.makeText(activity.getApplicationContext(), R.string.error_connect, Toast.LENGTH_LONG).show();
                 }
-            } else {
-                Toast.makeText(getActivity().getApplicationContext(), R.string.error_connect, Toast.LENGTH_LONG).show();
             }
         }
     }
 
     // Implementation of AsyncTask used to download XML from WJR for Clubs
-    private class DownloadEventTask extends AsyncTask<String, Void, List<Entry>> {
+    private static class DownloadEventTask extends AsyncTask<String, Void, List<Entry>> {
+        private final WeakReference<Activity> weakActivity;
+        private int clubId;
+
+        DownloadEventTask(Activity activity, int clubId) {
+            weakActivity = new WeakReference<>(activity);
+            this.clubId = clubId;
+        }
 
         @Override
         protected List<Entry> doInBackground(String... urls) {
             try {
-                return loadEventXmlFromNetwork(urls[0]);
+                return loadEventXmlFromNetwork(urls[0], weakActivity, clubId);
             } catch (IOException e) {
                 return null;
             } catch (XmlPullParserException e) {
@@ -346,25 +367,45 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
 
         @Override
         protected void onPostExecute(List<Entry> entries) {
-            if (entries != null) {
-                eventAdapter.clear();
-                eventAdapter.addAll(entries);
-                eventAdapter.notifyDataSetChanged();
-                eventSpinner.setSelection(0);
-                updateEventId();
-            } else {
-                Toast.makeText(getActivity().getApplicationContext(), R.string.error_connect, Toast.LENGTH_LONG).show();
+            // Re-acquire a strong reference to the activity, and verify
+            // that it still exists and is active.
+            Activity activity = weakActivity.get();
+            if (activity == null
+                    || activity.isFinishing()
+                    || activity.isDestroyed()) {
+                // activity is no longer valid, don't do anything!
+                return;
+            }
+
+            // The activity is still valid
+            MainActivity mainActivity = (MainActivity) weakActivity.get();
+            if (mainActivity.currentFrame == MainActivity.FrameType.HomeFrag) {
+                HomeFragment fragment = (HomeFragment) mainActivity.getSupportFragmentManager().findFragmentById(R.id.frame_fragmentholder);
+                if (entries != null) {
+                    fragment.eventAdapter.clear();
+                    fragment.eventAdapter.addAll(entries);
+                    fragment.eventAdapter.notifyDataSetChanged();
+                    fragment.eventSpinner.setSelection(0);
+                    fragment.updateEventId();
+                } else {
+                    Toast.makeText(activity.getApplicationContext(), R.string.error_connect, Toast.LENGTH_LONG).show();
+                }
             }
         }
     }
 
     // Implementation of AsyncTask used to download entry list XML from WJR
-    private class DownloadEntryListTask extends AsyncTask<String, Void, Boolean> {
+    private static class DownloadEntryListTask extends AsyncTask<String, Void, Boolean> {
+        private final WeakReference<Activity> weakActivity;
+
+        DownloadEntryListTask(Activity activity) {
+            weakActivity = new WeakReference<>(activity);
+        }
 
         @Override
         protected Boolean doInBackground(String... urls) {
             try {
-                return loadEntryListXmlFromNetwork(urls[0]);
+                return loadEntryListXmlFromNetwork(urls[0], weakActivity);
             } catch (IOException e) {
                 return null;
             } catch (XmlPullParserException e) {
@@ -374,10 +415,21 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
 
         @Override
         protected void onPostExecute(Boolean success) {
+            // Re-acquire a strong reference to the activity, and verify
+            // that it still exists and is active.
+            Activity activity = weakActivity.get();
+            if (activity == null
+                    || activity.isFinishing()
+                    || activity.isDestroyed()) {
+                // activity is no longer valid, don't do anything!
+                return;
+            }
+
+            // The activity is still valid
             if (success == null || !success) {
-                Toast.makeText(getActivity().getApplicationContext(), R.string.entry_list_failure, Toast.LENGTH_LONG).show();
+                Toast.makeText(activity.getApplicationContext(), R.string.entry_list_failure, Toast.LENGTH_LONG).show();
             } else {
-                Toast.makeText(getActivity().getApplicationContext(), R.string.entry_list_success, Toast.LENGTH_LONG).show();
+                Toast.makeText(activity.getApplicationContext(), R.string.entry_list_success, Toast.LENGTH_LONG).show();
             }
         }
     }
@@ -397,13 +449,19 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
     }
 
     // Downloads club xml and parses
-    private List<Entry> loadClubXmlFromNetwork(String urlString) throws XmlPullParserException, IOException {
+    private static List<Entry> loadClubXmlFromNetwork(String urlString, WeakReference<Activity> weakActivity)
+            throws XmlPullParserException, IOException {
         InputStream stream = null;
         FileOutputStream fos = null;
 
         try {
             stream = downloadUrl(urlString);
-            fos = getActivity().openFileOutput("clubs.xml", Context.MODE_PRIVATE);
+            Activity activity = weakActivity.get();
+            if (activity == null
+                    || activity.isFinishing()
+                    || activity.isDestroyed())
+                return null;
+            fos = activity.openFileOutput("clubs.xml", Context.MODE_PRIVATE);
             byte[] buffer = new byte[1024];
             int len;
             while ((len = stream.read(buffer)) != -1) {
@@ -420,16 +478,21 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
                 fos.close();
             }
         }
-        return loadClubXmlFromDisk();
+        return loadClubXmlFromDisk(weakActivity);
     }
 
-    private List<Entry> loadClubXmlFromDisk() throws XmlPullParserException, IOException{
+    private static List<Entry> loadClubXmlFromDisk(WeakReference<Activity> weakActivity) throws XmlPullParserException, IOException{
         FileInputStream fis = null;
         WjrClubParser xmlParser = new WjrClubParser();
         List<Entry> entries;
 
         try {
-            fis = new FileInputStream(getActivity().getFileStreamPath("clubs.xml"));
+            Activity activity = weakActivity.get();
+            if (activity == null
+                    || activity.isFinishing()
+                    || activity.isDestroyed())
+                return null;
+            fis = new FileInputStream(activity.getFileStreamPath("clubs.xml"));
             entries = xmlParser.parse(fis);
             // Makes sure that the streams are closed after the app is
             // finished using it.
@@ -443,13 +506,19 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
     }
 
     // Downloads club xml and parses
-    private List<Entry> loadEventXmlFromNetwork(String urlString) throws XmlPullParserException, IOException {
+    private static List<Entry> loadEventXmlFromNetwork(String urlString, WeakReference<Activity> weakActivity, int clubId)
+            throws XmlPullParserException, IOException {
         InputStream stream = null;
         FileOutputStream fos = null;
 
         try {
             stream = downloadUrl(urlString);
-            fos = getActivity().openFileOutput("events_" + clubId + ".xml", Context.MODE_PRIVATE);
+            Activity activity = weakActivity.get();
+            if (activity == null
+                    || activity.isFinishing()
+                    || activity.isDestroyed())
+                return null;
+            fos = activity.openFileOutput("events_" + clubId + ".xml", Context.MODE_PRIVATE);
             byte[] buffer = new byte[1024];
             int len;
             while ((len = stream.read(buffer)) != -1) {
@@ -466,16 +535,23 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
                 fos.close();
             }
         }
-        return loadEventXmlFromDisk();
+        return loadEventXmlFromDisk(weakActivity, clubId);
     }
 
-    private List<Entry> loadEventXmlFromDisk() throws XmlPullParserException, IOException {
+    private static List<Entry> loadEventXmlFromDisk(WeakReference<Activity> weakActivity, int clubId)
+            throws XmlPullParserException, IOException {
         FileInputStream fis = null;
         WjrEventParser xmlParser = new WjrEventParser();
         List<Entry> entries;
 
         try {
-            fis = new FileInputStream(getActivity().getFileStreamPath("events_" + clubId + ".xml"));
+            Activity activity = weakActivity.get();
+            if (activity == null
+                    || activity.isFinishing()
+                    || activity.isDestroyed())
+                return null;
+            else
+                fis = new FileInputStream(activity.getFileStreamPath("events_" + clubId + ".xml"));
             entries = xmlParser.parse(fis);
             // Makes sure that the streams are closed after the app is
             // finished using it.
@@ -488,7 +564,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
         return entries;
     }
 
-    private Boolean loadEntryListXmlFromNetwork(String urlString) throws XmlPullParserException, IOException {
+    private static Boolean loadEntryListXmlFromNetwork(String urlString, WeakReference<Activity> weakActivity)
+            throws XmlPullParserException, IOException {
         InputStream stream = null;
         WjrCompetitorParser xmlParser = new WjrCompetitorParser();
         EventInfo info;
@@ -506,6 +583,22 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
         
         if (info != null) {
             // Add info to DB
+            // Re-acquire a strong reference to the activity, and verify
+            // that it still exists and is active.
+            Activity activity = weakActivity.get();
+            if (activity == null
+                    || activity.isFinishing()
+                    || activity.isDestroyed()) {
+                // activity is no longer valid, don't do anything!
+                return false;
+            }
+
+            // Initialize database
+            WjrDatabase database = Room.databaseBuilder(activity.getApplicationContext(), WjrDatabase.class, MainActivity.DATABASE_NAME)
+                    .fallbackToDestructiveMigration()
+                    .build();
+
+
             database.daoAccess().addEvent(info.event);
             database.daoAccess().addCategories(info.categories);
             database.daoAccess().insertCompetitorList(info.competitors);
@@ -517,7 +610,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
 
     // Given a string representation of a URL, sets up a connection and gets
     // an input stream.
-    private InputStream downloadUrl(String urlString) throws IOException {
+    private static InputStream downloadUrl(String urlString) throws IOException {
         URL url = new URL(urlString);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setReadTimeout(10000 /* milliseconds */);

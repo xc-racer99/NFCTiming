@@ -1,6 +1,7 @@
 package ca.orienteeringbc.nfctiming;
 
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.arch.persistence.room.Room;
 import android.content.Context;
@@ -20,6 +21,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.lang.ref.WeakReference;
 import java.util.List;
 
 
@@ -34,9 +36,6 @@ public class StartFragment extends Fragment {
 
     // The event id
     private int eventId;
-
-    // Categories in use for event
-    private List<WjrCategory> categories;
 
     // The fragment's view
     private View view;
@@ -69,18 +68,29 @@ public class StartFragment extends Fragment {
         super.onResume();
 
         if (eventId > 0) {
-            new SetupEventName().execute();
+            new SetupEventNameTask(getActivity(), database, eventId).execute();
             setupStartList();
         }
     }
 
     // To be called from Activity when something changes
     protected void setupStartList() {
-        new SetupStartListTask().execute();
+        new SetupStartListTask(getActivity(), database, eventId).execute();
     }
 
     // Fetches competitors and categories from database, initializes button
-    private class SetupStartListTask extends AsyncTask<Void, Void, List<Competitor>> {
+    private static class SetupStartListTask extends AsyncTask<Void, Void, List<Competitor>> {
+        private final WeakReference<Activity> weakActivity;
+        private WjrDatabase database;
+        private int eventId;
+        private List<WjrCategory> categories;
+
+        SetupStartListTask(Activity activity, WjrDatabase database, int eventId) {
+            weakActivity = new WeakReference<>(activity);
+            this.database = database;
+            this.eventId = eventId;
+        }
+
         @Override
         protected List<Competitor> doInBackground(Void... voids) {
             categories = database.daoAccess().getCategoryById(eventId);
@@ -89,59 +99,83 @@ public class StartFragment extends Fragment {
 
         @Override
         protected void onPostExecute(List<Competitor> competitors) {
-            // If categories.size() is 0, then we probably haven't fetched the event data
-            if (categories.size() == 0) {
-                Toast.makeText(getActivity(), R.string.no_categories, Toast.LENGTH_LONG).show();
-            } else {
-                ListView startList = view.findViewById(R.id.startlist_listview);
-                adapter = new StartListArrayAdapter(getActivity(), competitors, categories);
-                startList.setAdapter(adapter);
+            // Re-acquire a strong reference to the activity, and verify
+            // that it still exists and is active.
+            final Activity activity = weakActivity.get();
+            if (activity == null
+                    || activity.isFinishing()
+                    || activity.isDestroyed()) {
+                // activity is no longer valid, don't do anything!
+                return;
+            }
 
-                // Setup add new person
-                Button button = view.findViewById(R.id.add_new_person);
-                button.setEnabled(true);
-                button.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        LayoutInflater layoutInflaterAndroid = LayoutInflater.from(getActivity());
-                        View mView = layoutInflaterAndroid.inflate(R.layout.add_new_competitor_dialog, null);
-                        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(getActivity());
-                        alertDialogBuilder.setView(mView);
+            // The activity is still valid
+            MainActivity mainActivity = (MainActivity) weakActivity.get();
+            if (mainActivity.currentFrame == MainActivity.FrameType.StartFrag) {
+                StartFragment fragment = (StartFragment) mainActivity.getSupportFragmentManager().findFragmentById(R.id.frame_fragmentholder);
 
-                        final EditText firstName = mView.findViewById(R.id.first_name_input);
-                        final EditText lastName = mView.findViewById(R.id.last_name_input);
-                        final Spinner spinner = mView.findViewById(R.id.new_person_category_spinner);
-                        ArrayAdapter<WjrCategory> catAdapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_list_item_1, categories);
-                        spinner.setAdapter(catAdapter);
-                        alertDialogBuilder.setPositiveButton(R.string.add, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-                                String firstNameString = firstName.getText().toString();
-                                String lastNameString = lastName.getText().toString();
-                                if (firstNameString.isEmpty() || lastNameString.isEmpty()) {
-                                    // No name given, warn
-                                    Toast.makeText(getActivity(), R.string.no_name, Toast.LENGTH_LONG).show();
-                                } else {
-                                    Competitor competitor = new Competitor(eventId, firstName.getText().toString(), lastName.getText().toString());
-                                    WjrCategory category = (WjrCategory) spinner.getSelectedItem();
-                                    competitor.wjrCategoryId = category.wjrCategoryId;
-                                    new AddCompetitorTask().execute(competitor);
-                                }
-                            }
-                        }).setNegativeButton(R.string.cancel,
-                                new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialogBox, int id) {
-                                        dialogBox.cancel();
+                // If categories.size() is 0, then we probably haven't fetched the event data
+                if (categories.size() == 0) {
+                    Toast.makeText(activity, R.string.no_categories, Toast.LENGTH_LONG).show();
+                } else {
+                    ListView startList = fragment.view.findViewById(R.id.startlist_listview);
+                    fragment.adapter = new StartListArrayAdapter(activity, competitors, categories);
+                    startList.setAdapter(fragment.adapter);
+
+                    // Setup add new person
+                    Button button = fragment.view.findViewById(R.id.add_new_person);
+                    button.setEnabled(true);
+                    button.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            LayoutInflater layoutInflaterAndroid = LayoutInflater.from(activity);
+                            View mView = layoutInflaterAndroid.inflate(R.layout.add_new_competitor_dialog, null);
+                            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(activity);
+                            alertDialogBuilder.setView(mView);
+
+                            final EditText firstName = mView.findViewById(R.id.first_name_input);
+                            final EditText lastName = mView.findViewById(R.id.last_name_input);
+                            final Spinner spinner = mView.findViewById(R.id.new_person_category_spinner);
+                            ArrayAdapter<WjrCategory> catAdapter = new ArrayAdapter<>(activity, android.R.layout.simple_list_item_1, categories);
+                            spinner.setAdapter(catAdapter);
+                            alertDialogBuilder.setPositiveButton(R.string.add, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    String firstNameString = firstName.getText().toString();
+                                    String lastNameString = lastName.getText().toString();
+                                    if (firstNameString.isEmpty() || lastNameString.isEmpty()) {
+                                        // No name given, warn
+                                        Toast.makeText(activity, R.string.no_name, Toast.LENGTH_LONG).show();
+                                    } else {
+                                        Competitor competitor = new Competitor(eventId, firstName.getText().toString(), lastName.getText().toString());
+                                        WjrCategory category = (WjrCategory) spinner.getSelectedItem();
+                                        competitor.wjrCategoryId = category.wjrCategoryId;
+                                        new AddCompetitorTask(activity, database).execute(competitor);
                                     }
-                                }).show();
-                    }
-                });
+                                }
+                            }).setNegativeButton(R.string.cancel,
+                                    new DialogInterface.OnClickListener() {
+                                        public void onClick(DialogInterface dialogBox, int id) {
+                                            dialogBox.cancel();
+                                        }
+                                    }).show();
+                        }
+                    });
+                }
             }
         }
     }
 
     // Async class to add a competitor to DB and ArrayAdapter
-    private class AddCompetitorTask extends AsyncTask<Competitor, Void, Competitor> {
+    private static class AddCompetitorTask extends AsyncTask<Competitor, Void, Competitor> {
+        private final WeakReference<Activity> weakActivity;
+        private WjrDatabase database;
+
+        AddCompetitorTask(Activity activity, WjrDatabase database) {
+            weakActivity = new WeakReference<>(activity);
+            this.database = database;
+        }
+
         @Override
         protected Competitor doInBackground(Competitor... competitors) {
             database.daoAccess().insertCompetitors(competitors[0]);
@@ -150,12 +184,38 @@ public class StartFragment extends Fragment {
 
         @Override
         protected void onPostExecute(Competitor competitor) {
-            adapter.add(competitor);
+            // Re-acquire a strong reference to the activity, and verify
+            // that it still exists and is active.
+            final Activity activity = weakActivity.get();
+            if (activity == null
+                    || activity.isFinishing()
+                    || activity.isDestroyed()) {
+                // activity is no longer valid, don't do anything!
+                return;
+            }
+
+            // The activity is still valid
+            MainActivity mainActivity = (MainActivity) weakActivity.get();
+            if (mainActivity.currentFrame == MainActivity.FrameType.StartFrag) {
+                StartFragment fragment = (StartFragment) mainActivity.getSupportFragmentManager().findFragmentById(R.id.frame_fragmentholder);
+                fragment.adapter.add(competitor);
+            }
         }
     }
 
     // Sets the event name field
-    private class SetupEventName extends AsyncTask<Void, Void, String> {
+    private static class SetupEventNameTask extends AsyncTask<Void, Void, String> {
+        private final WeakReference<Activity> weakActivity;
+        private WjrDatabase database;
+        private int eventId;
+
+        SetupEventNameTask(Activity activity, WjrDatabase database, int eventId) {
+            weakActivity = new WeakReference<>(activity);
+            this.database = database;
+            this.eventId = eventId;
+        }
+
+
         @Override
         protected String doInBackground(Void... voids) {
             return database.daoAccess().getEventNameById(eventId);
@@ -163,8 +223,23 @@ public class StartFragment extends Fragment {
 
         @Override
         protected void onPostExecute(String name) {
-            TextView eventName = view.findViewById(R.id.event_title);
-            eventName.setText(name);
+            // Re-acquire a strong reference to the activity, and verify
+            // that it still exists and is active.
+            final Activity activity = weakActivity.get();
+            if (activity == null
+                    || activity.isFinishing()
+                    || activity.isDestroyed()) {
+                // activity is no longer valid, don't do anything!
+                return;
+            }
+
+            // The activity is still valid
+            MainActivity mainActivity = (MainActivity) weakActivity.get();
+            if (mainActivity.currentFrame == MainActivity.FrameType.StartFrag) {
+                StartFragment fragment = (StartFragment) mainActivity.getSupportFragmentManager().findFragmentById(R.id.frame_fragmentholder);
+                TextView eventName = fragment.view.findViewById(R.id.event_title);
+                eventName.setText(name);
+            }
         }
     }
 }
