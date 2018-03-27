@@ -61,12 +61,17 @@ public class StartFragment extends Fragment {
 
         eventId = sharedPrefs.getInt(MainActivity.SELECTED_EVENT_KEY, -1);
 
+        return view;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
         if (eventId > 0) {
             new SetupEventName().execute();
             setupStartList();
         }
-
-        return view;
     }
 
     // To be called from Activity when something changes

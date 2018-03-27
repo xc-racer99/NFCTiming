@@ -62,9 +62,6 @@ public class FinishFragment extends Fragment {
         eventId = sharedPrefs.getInt(MainActivity.SELECTED_EVENT_KEY, -1);
 
         if (eventId > 0) {
-            new SetupEventName().execute();
-            setupResultList();
-
             Button uploadResults = view.findViewById(R.id.upload_results);
 
             String pass = sharedPrefs.getString(MainActivity.WJR_USERNAME, "");
@@ -82,6 +79,16 @@ public class FinishFragment extends Fragment {
         }
 
         return view;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        if (eventId > 0) {
+            new SetupEventName().execute();
+            setupResultList();
+        }
     }
 
     protected void setupResultList() {

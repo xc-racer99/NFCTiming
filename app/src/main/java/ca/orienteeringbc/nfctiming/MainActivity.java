@@ -53,6 +53,9 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
     // Mime type of assigned tags
     public static final String MIME_TEXT_PLAIN = "text/plain";
 
+    // Saved frame in bundle
+    private static final String STATE_CURRENT_FRAME = "currentFrame";
+
     // Counter to determine if we should reload the frame or not
     private enum FrameType {
         HomeFrag,
@@ -116,8 +119,27 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                     }
                 });
 
-        // Initialize to home view
-        addHomeFragment();
+        if (savedInstanceState != null) {
+            currentFrame = (FrameType) savedInstanceState.get(STATE_CURRENT_FRAME);
+            if (currentFrame == null) {
+                addHomeFragment();
+            } else {
+                switch (currentFrame) {
+                    case HomeFrag:
+                        addHomeFragment();
+                        break;
+                    case StartFrag:
+                        addStartFragment();
+                        break;
+                    case FinishFrag:
+                        addFinishFragment();
+                        break;
+                }
+            }
+        } else {
+            // Initialize to home view
+            addHomeFragment();
+        }
 
         // Initialize database
         database = Room.databaseBuilder(getApplicationContext(), WjrDatabase.class, MainActivity.DATABASE_NAME)
@@ -182,6 +204,14 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
 
             mAdapter.enableForegroundDispatch(this, mPendingIntent, mFilters, mTechLists);
         }
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        // Save currently viewed pane
+        savedInstanceState.putSerializable(STATE_CURRENT_FRAME, currentFrame);
+
+        super.onSaveInstanceState(savedInstanceState);
     }
 
     @Override
