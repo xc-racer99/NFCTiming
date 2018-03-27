@@ -295,7 +295,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.frame_fragmentholder, frag);
 
-        transaction.commit();
+        transaction.commitNow();
     }
 
     private void addStartFragment() {
@@ -303,7 +303,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.frame_fragmentholder, frag);
 
-        transaction.commit();
+        transaction.commitNow();
     }
 
     private void addFinishFragment() {
@@ -311,7 +311,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.frame_fragmentholder, frag);
 
-        transaction.commit();
+        transaction.commitNow();
     }
 
     // Receive callbacks from HomeFragment about changes to the eventId
