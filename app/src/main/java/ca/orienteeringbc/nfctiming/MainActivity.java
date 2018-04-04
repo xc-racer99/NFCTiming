@@ -150,11 +150,13 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
         mAdapter = NfcAdapter.getDefaultAdapter(this);
         if (mAdapter == null) {
             // Warn about no NFC
-            Toast.makeText(this, R.string.no_nfc, Toast.LENGTH_LONG).show();
+            new AlertDialog.Builder(this)
+                    .setCancelable(true)
+                    .setTitle(R.string.no_nfc)
+                    .setMessage(R.string.no_nfc_limitations)
+                    .setPositiveButton(R.string.ok, null)
+                    .show();
         } else {
-            if (!mAdapter.isEnabled()) {
-                Toast.makeText(this, R.string.nfc_disabled, Toast.LENGTH_LONG).show();
-            }
             mPendingIntent = PendingIntent.getActivity(this, 0,
                     new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
 
