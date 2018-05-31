@@ -383,7 +383,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
     /**
      * Gets all the competitors for selection
      */
-    private class SelectCompetitorTask extends  AsyncTask<Long, Void, List<Competitor>> {
+    private class SelectCompetitorTask extends AsyncTask<Long, Void, List<Competitor>> {
         private long nfcId;
         private int wjrId;
         private List<WjrCategory> categories;
@@ -490,7 +490,13 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
     /**
      * Updates a competitor in the database
      */
-    private class UpdateCompetitorTask extends AsyncTask<Competitor, Void, Void> {
+    private static class UpdateCompetitorTask extends AsyncTask<Competitor, Void, Void> {
+        private WjrDatabase database;
+
+        UpdateCompetitorTask(WjrDatabase database) {
+            this.database = database;
+        }
+
         @Override
         protected Void doInBackground(Competitor... competitors) {
             int ret = database.daoAccess().updateCompetitor(competitors[0]);
@@ -512,7 +518,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                 .setTitle(R.string.confirm_finish)
                 .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialogInterface, int which) {
-                        new UpdateCompetitorTask().execute(competitor);
+                        new UpdateCompetitorTask(database).execute(competitor);
                         dialogInterface.dismiss();
                         updateFinishFrag();
                     }})
@@ -543,7 +549,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                     // Change (old) competitor's NFC tag
                     Competitor oldCompetitor = new Competitor(competitor);
                     oldCompetitor.nfcTagId = -1;
-                    new UpdateCompetitorTask().execute(oldCompetitor);
+                    new UpdateCompetitorTask(database).execute(oldCompetitor);
 
                     // Show competitor selector screen
                     new SelectCompetitorTask().execute(competitor.nfcTagId, Long.valueOf(-1));
@@ -555,7 +561,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                 .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialogInterface, int which) {
                         competitor.endTime = newEndTime;
-                        new UpdateCompetitorTask().execute(competitor);
+                        new UpdateCompetitorTask(database).execute(competitor);
                         dialogInterface.dismiss();
                         updateFinishFrag();
                     }})
@@ -583,7 +589,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                 .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialogInterface, int which) {
                         competitor.startTime = System.currentTimeMillis() / 1000;
-                        new UpdateCompetitorTask().execute(competitor);
+                        new UpdateCompetitorTask(database).execute(competitor);
                         dialogInterface.dismiss();
                         updateFinishFrag();
                     }})
