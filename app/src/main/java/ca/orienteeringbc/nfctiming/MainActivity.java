@@ -342,9 +342,9 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
             } else {
                 // Un-assigned card, at the finish
                 if (competitor.endTime > 0)
-                    showFinish(competitor, false);
+                    showFinishOverride(competitor, true);
                 else
-                    showFinish(competitor, true);
+                    showFinish(competitor);
             }
         }
     }
@@ -371,9 +371,9 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                 // Yay!  Pre-assigned card, pre-registered.  Now check if finished or not
                 if (competitor.startTime > 0)
                     if (competitor.endTime > 0)
-                        showFinish(competitor, false);
+                        showFinishOverride(competitor, false);
                     else
-                        showFinish(competitor, true);
+                        showFinish(competitor);
                 else
                     showStart(competitor);
             }
@@ -511,16 +511,56 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
     }
 
     // Called when competitor has finished
-    private void showFinish(final Competitor competitor, boolean first) {
+    private void showFinish(final Competitor competitor) {
         competitor.endTime = System.currentTimeMillis() / 1000;
         AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(MainActivity.this);
-        if (first)
-            alertDialogBuilder.setMessage(getString(R.string.confirm_finish_msg, competitor.toString()));
-        else
-            alertDialogBuilder.setMessage(getString(R.string.confirm_finish_replacement_msg, competitor.toString()));
-        alertDialogBuilder.setTitle(R.string.confirm_finish)
+        alertDialogBuilder.setMessage(getString(R.string.confirm_finish_msg, competitor.toString()))
+                .setTitle(R.string.confirm_finish)
                 .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialogInterface, int which) {
+                        new UpdateCompetitorTask().execute(competitor);
+                        dialogInterface.dismiss();
+                        updateFinishFrag();
+                    }})
+                .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.cancel();
+                    }
+                })
+                .setOnDismissListener(new DialogInterface.OnDismissListener() {
+                    @Override
+                    public void onDismiss(DialogInterface dialogInterface) {
+                        queuedSwipe = false;
+                    }
+                })
+                .show();
+    }
+
+    // Called when competitor has already finished, but card is read in again
+    private void showFinishOverride(final Competitor competitor, boolean reassignable) {
+        final long newEndTime = System.currentTimeMillis() / 1000;
+
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(MainActivity.this);
+        if (reassignable) {
+            alertDialogBuilder.setNeutralButton(R.string.reassign_card, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    // Change (old) competitor's NFC tag
+                    Competitor oldCompetitor = new Competitor(competitor);
+                    oldCompetitor.nfcTagId = -1;
+                    new UpdateCompetitorTask().execute(oldCompetitor);
+
+                    // Show competitor selector screen
+                    new SelectCompetitorTask().execute(competitor.nfcTagId, Long.valueOf(-1));
+                }
+            });
+        }
+        alertDialogBuilder.setMessage(getString(R.string.confirm_finish_replacement_msg, competitor.toString()))
+                .setTitle(R.string.confirm_finish)
+                .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialogInterface, int which) {
+                        competitor.endTime = newEndTime;
                         new UpdateCompetitorTask().execute(competitor);
                         dialogInterface.dismiss();
                         updateFinishFrag();

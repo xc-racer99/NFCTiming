@@ -40,6 +40,18 @@ public class Competitor {
         this.lastName = lastName;
     }
 
+    public Competitor(final Competitor competitor) {
+        this.internalId = competitor.internalId;
+        this.wjrEventId = competitor.wjrEventId;
+        this.wjrId = competitor.wjrId;
+        this.nfcTagId = competitor.nfcTagId;
+        this.firstName = competitor.firstName;
+        this.lastName = competitor.lastName;
+        this.wjrCategoryId = competitor.wjrCategoryId;
+        this.startTime = competitor.startTime;
+        this.endTime = competitor.endTime;
+    }
+
     public String toString() {
         return lastName + ", " + firstName;
     }
