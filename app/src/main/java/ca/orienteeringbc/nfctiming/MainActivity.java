@@ -445,7 +445,6 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                                 competitor.wjrCategoryId = category.wjrCategoryId;
                                 competitor.wjrId = wjrId;
                                 competitor.nfcTagId = nfcId;
-                                new AddCompetitorTask().execute(competitor);
                                 showStart(competitor);
 
                                 // Update start fragment if displayed
@@ -489,23 +488,18 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
     }
 
     /**
-     * Adds a new competitor to the database
-     */
-    private class AddCompetitorTask extends AsyncTask<Competitor, Void, Void> {
-        @Override
-        protected Void doInBackground(Competitor... competitors) {
-            database.daoAccess().insertCompetitors(competitors[0]);
-            return null;
-        }
-    }
-
-    /**
      * Updates a competitor in the database
      */
     private class UpdateCompetitorTask extends AsyncTask<Competitor, Void, Void> {
         @Override
         protected Void doInBackground(Competitor... competitors) {
-            database.daoAccess().updateCompetitor(competitors[0]);
+            int ret = database.daoAccess().updateCompetitor(competitors[0]);
+
+            // If we didn't change any, then we're trying to insert a new competitor, not update one
+            if (ret == 0) {
+                Log.d("New Competitor", "Being added");
+                database.daoAccess().insertCompetitors(competitors[0]);
+            }
             return null;
         }
     }

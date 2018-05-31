@@ -25,10 +25,10 @@ public interface DaoAccess {
 
     // Competitor update methods
     @Update (onConflict = OnConflictStrategy.REPLACE)
-    void updateCompetitor(Competitor... competitors);
+    int updateCompetitor(Competitor... competitors);
 
     @Update (onConflict = OnConflictStrategy.REPLACE)
-    void updateCompetitorList(List<Competitor> competitors);
+    int updateCompetitorList(List<Competitor> competitors);
 
     // Competitor access methods
     @Query("SELECT * FROM Competitor WHERE wjrEventId = :wjrEventId AND nfcTagId = :nfcTagId")
