@@ -2,6 +2,7 @@ package ca.orienteeringbc.nfctiming;
 
 import android.app.Activity;
 import android.support.annotation.NonNull;
+import android.text.format.DateUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,7 +34,7 @@ public class FinishArrayAdapter extends ArrayAdapter<Competitor> {
     @Override
     @NonNull
     public View getView(int position, View convertView, @NonNull ViewGroup parent) {
-        View view = null;
+        View view;
         if (convertView == null) {
             LayoutInflater inflater = context.getLayoutInflater();
             view = inflater.inflate(R.layout.list_result, null);
@@ -58,7 +59,7 @@ public class FinishArrayAdapter extends ArrayAdapter<Competitor> {
             holder.statusHolder.setText(R.string.status_dnf);
         } else {
             // Competitor has finished, show time
-            holder.statusHolder.setText(String.valueOf(competitor.endTime - competitor.startTime));
+            holder.statusHolder.setText(DateUtils.formatElapsedTime(competitor.endTime - competitor.startTime));
         }
 
         return view;
