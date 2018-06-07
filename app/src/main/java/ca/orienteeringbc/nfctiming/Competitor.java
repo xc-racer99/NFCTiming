@@ -53,6 +53,6 @@ public class Competitor {
     }
 
     public String toString() {
-        return lastName + ", " + firstName;
+        return firstName + " " + lastName;
     }
 }
