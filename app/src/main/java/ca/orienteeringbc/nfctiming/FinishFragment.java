@@ -16,6 +16,8 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
@@ -169,7 +171,7 @@ public class FinishFragment extends Fragment {
     }
 
     // Uploads a results xml
-    private static class UploadResultsTask extends AsyncTask<Void, Void, Boolean> {
+    private class UploadResultsTask extends AsyncTask<Void, Void, Boolean> {
         private String res = null;
         private final WeakReference<Activity> weakActivity;
         private WjrDatabase database;
@@ -185,6 +187,14 @@ public class FinishFragment extends Fragment {
         protected Boolean doInBackground(Void... voids) {
             OutputStream out;
             try {
+                File mFile = new File(getActivity().getExternalFilesDir(null), eventId + ".xml");
+                OutputStream out2 = new FileOutputStream(mFile);
+
+                new UploadResultsXml().makeXml(out2, database, eventId);
+
+                if (out2 != null)
+                    out2.close();
+
                 HttpURLConnection connection = uploadUrl("https://whyjustrun.ca/iof/3.0/events/" + eventId + "/result_list.xml", weakActivity);
                 if (connection == null)
                     return false;
