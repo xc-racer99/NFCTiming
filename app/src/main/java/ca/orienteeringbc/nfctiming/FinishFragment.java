@@ -95,8 +95,11 @@ public class FinishFragment extends Fragment {
                             editor.putBoolean(MainActivity.SAVE_WJR_CREDENTIALS, save_pass.isChecked());
                             editor.apply();
 
-                            new UploadResultsTask(getActivity(), database, eventId,
-                                    username.getText().toString(), password.getText().toString()).execute();
+                            String basicAuth = "Basic " + Base64.encodeToString(
+                                    new String(username.getText().toString() + ":" + password.getText().toString()).getBytes(),
+                                    Base64.NO_WRAP);
+
+                            new UploadResultsTask(getActivity(), database, eventId, basicAuth).execute(false);
                         }
                     }).setNegativeButton(R.string.cancel,
                             new DialogInterface.OnClickListener() {
@@ -204,39 +207,38 @@ public class FinishFragment extends Fragment {
     }
 
     // Uploads a results xml
-    private class UploadResultsTask extends AsyncTask<Void, Void, Boolean> {
+    private static class UploadResultsTask extends AsyncTask<Boolean, Void, Boolean> {
         private String res = null;
+        private int resInt = -1;
         private final WeakReference<Activity> weakActivity;
         private WjrDatabase database;
         private int eventId;
         private final String basicAuth;
+        private File mFile;
 
-        UploadResultsTask(Activity activity, WjrDatabase database, int eventId, String username, String password) {
+        UploadResultsTask(Activity activity, WjrDatabase database, int eventId, String basicAuth) {
             weakActivity = new WeakReference<>(activity);
             this.database = database;
             this.eventId = eventId;
-
-            basicAuth = "Basic " + Base64.encodeToString(new String(username + ":" + password).getBytes(), Base64.NO_WRAP);
+            this.basicAuth = basicAuth;
+            mFile = new File(activity.getExternalFilesDir(null), eventId + ".xml");
         }
 
         @Override
-        protected Boolean doInBackground(Void... voids) {
+        protected Boolean doInBackground(Boolean... compat) {
             OutputStream out;
             try {
-                File mFile = new File(getActivity().getExternalFilesDir(null), eventId + ".xml");
-                OutputStream out2 = new FileOutputStream(mFile);
+                OutputStream fileOut = new FileOutputStream(mFile);
 
-                new UploadResultsXml().makeXml(out2, database, eventId);
-
-                if (out2 != null)
-                    out2.close();
+                // Save a copy to SD card
+                new UploadResultsXml().makeXml(fileOut, database, eventId, false);
 
                 HttpURLConnection connection = uploadUrl("https://whyjustrun.ca/iof/3.0/events/" + eventId + "/result_list.xml", basicAuth, weakActivity);
                 if (connection == null)
                     return false;
                 out = connection.getOutputStream();
 
-                new UploadResultsXml().makeXml(out, database, eventId);
+                new UploadResultsXml().makeXml(out, database, eventId, compat[0]);
 
                 res = connection.getResponseMessage();
             } catch (IOException e) {
@@ -256,11 +258,33 @@ public class FinishFragment extends Fragment {
                 // activity is no longer valid, don't do anything!
                 return;
             }
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+
             if (success) {
-                Toast.makeText(activity, "Server Replied " + res, Toast.LENGTH_SHORT).show();
+                if (resInt == HttpURLConnection.HTTP_OK) {
+                    // Success!
+                    builder.setPositiveButton(R.string.ok, null)
+                            .setMessage(R.string.success_uploading);
+                } else if (resInt == HttpURLConnection.HTTP_BAD_REQUEST) {
+                    // Presumably failed due to day-of registrants with two entries of their name online
+                    builder.setMessage(activity.getString(R.string.bad_request_reply, res))
+                            .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    new UploadResultsTask(activity, database, eventId, basicAuth).execute(true);
+                                }
+                            }).setNegativeButton(R.string.cancel, null);
+                } else {
+                    // Unknown error, presumably due to incorrect password
+                    builder.setMessage(R.string.internal_error_replay)
+                            .setPositiveButton(R.string.ok, null);
+                }
             } else {
-                Toast.makeText(activity, R.string.error_uploading, Toast.LENGTH_LONG).show();
+                builder.setPositiveButton(R.string.ok, null)
+                        .setMessage(R.string.error_uploading);
             }
+            builder.show();
         }
     }
 

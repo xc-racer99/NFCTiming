@@ -57,8 +57,10 @@
     <string name="status_dns">DNS</string>
     <string name="status_dnf">DNF</string>
     <string name="status_on_course">On Course</string>
-    <string name="success_uploading">Server Replied %1$s</string>
-    <string name="error_uploading">Encountered an error connecting to server</string>
+    <string name="bad_request_reply">Error uploading: Server replied "%1$s"\n\nThis is often because of day-of registrants.\n\Do you want to try again without uploading day-of event registrants?</string>
+    <string name="internal_error_replay">Error uploading: Server replied "%1$s"\n\nPlease check your username/password\n\n</string>
+    <string name="success_uploading">Successfully uploaded results</string>
+    <string name="error_uploading">Encountered an error connecting to server\n\nAre you connected to the internet?</string>
     <string name="save_password">Save Password</string>
 
     <!-- Common -->

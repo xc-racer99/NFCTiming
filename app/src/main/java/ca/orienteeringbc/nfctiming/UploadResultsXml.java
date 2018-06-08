@@ -17,7 +17,7 @@ public class UploadResultsXml {
     // No namespace needed
     private static final String ns = null;
 
-    public boolean makeXml(OutputStream outputStream, WjrDatabase database, int eventId) throws IOException {
+    public boolean makeXml(OutputStream outputStream, WjrDatabase database, int eventId, boolean preRegistered) throws IOException {
         XmlSerializer serializer = Xml.newSerializer();
 
         List<WjrCategory> categories = database.daoAccess().getCategoryById(eventId);
@@ -56,6 +56,9 @@ public class UploadResultsXml {
                 // Write competitor info
                 int pos = 1;
                 for (Competitor competitor : competitors) {
+                    // When running pre-registered mode, don't attempt to upload those without a valid ID
+                    if (preRegistered && competitor.wjrId == -1)
+                        continue;
                     if (writeCompetitor(serializer, competitor, pos))
                         pos++;
                 }
@@ -81,7 +84,7 @@ public class UploadResultsXml {
         serializer.endTag(ns, "Class");
     }
 
-    // Writes a competitor with given position, returns true if status OK
+    // Writes a competitor with given position, returns true if status OK and we want to write person
     private boolean writeCompetitor(XmlSerializer serializer, Competitor competitor, int pos) throws IOException {
         boolean ret = false;
 
