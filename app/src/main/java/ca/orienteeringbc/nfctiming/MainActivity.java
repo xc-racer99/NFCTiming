@@ -240,6 +240,15 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
         else
             queuedSwipe = true;
 
+        // Note, this is an attempt to convert the byte array into a long
+        // BigInteger (which uses 2's complement), gives a different number
+        Tag t = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
+        byte[] id_array  = t.getId();
+        long nfcId = 0;
+        for (int i = 0; i < id_array.length; i++) {
+            nfcId += ((long) id_array[i] & 0xffL) << (8 * i);
+        }
+
         // Fetch the tag from the intent
         Parcelable[] rawMessages = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
 
@@ -269,7 +278,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                                 // Remove WjrId: from start
                                 int wjrId = Integer.parseInt(string.substring(6));
                                 if (wjrId > 0) {
-                                    new CompetitorFromWjrIdTask().execute(wjrId);
+                                    new CompetitorFromWjrIdTask().execute(Long.valueOf(wjrId), nfcId);
                                     return;
                                 }
                             }
@@ -280,17 +289,8 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                 }
             }
         }
-
-        // Note, this is an attempt to convert the byte array into a long
-        // BigInteger (which uses 2's complement), gives a different number
-        Tag t = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
-        byte[] id_array  = t.getId();
-        long value = 0;
-        for (int i = 0; i < id_array.length; i++) {
-            value += ((long) id_array[i] & 0xffL) << (8 * i);
-        }
-
-        new CompetitorFromNfcTagTask().execute(value);
+        // If we got here, then we didn't find an assigned card, use tag
+        new CompetitorFromNfcTagTask().execute(nfcId);
     }
 
     private void addHomeFragment() {
@@ -354,20 +354,22 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
      * Tries to find a competitor by their wjrId number from their pre-assigned card
      * For non-assigned cards, see @CompetitorFromNfcTagTask
      */
-    private class CompetitorFromWjrIdTask extends AsyncTask<Integer, Void, Competitor> {
+    private class CompetitorFromWjrIdTask extends AsyncTask<Long, Void, Competitor> {
+        long nfcId;
         int wjrId;
 
         @Override
-        protected Competitor doInBackground(Integer... wjrId) {
-            this.wjrId = wjrId[0];
-            return database.daoAccess().getCompetitorByWjrId(eventId, wjrId[0]);
+        protected Competitor doInBackground(Long... wjrId) {
+            this.wjrId = wjrId[0].intValue();
+            this.nfcId = wjrId[1];
+            return database.daoAccess().getCompetitorByWjrId(eventId, this.wjrId);
         }
 
         @Override
         protected void onPostExecute(Competitor competitor) {
             if (competitor == null) {
                 // Pre-assigned card, but didn't pre-register
-                new SelectCompetitorTask().execute(Long.valueOf(-1), Long.valueOf(wjrId));
+                new CompetitorFromNfcTagTask().execute(nfcId);
             } else {
                 // Yay!  Pre-assigned card, pre-registered.  Now check if finished or not
                 if (competitor.startTime > 0)
@@ -386,13 +388,11 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
      */
     private class SelectCompetitorTask extends AsyncTask<Long, Void, List<Competitor>> {
         private long nfcId;
-        private int wjrId;
         private List<WjrCategory> categories;
 
         @Override
         protected List<Competitor> doInBackground(Long... ids) {
             nfcId = ids[0];
-            wjrId = ids[1].intValue();
             categories = database.daoAccess().getCategoryById(eventId);
             return database.daoAccess().getUnstartedCompetitorsByEvent(eventId);
         }
@@ -444,7 +444,6 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                                 Competitor competitor = new Competitor(eventId, firstName.getText().toString(), lastName.getText().toString());
                                 WjrCategory category = (WjrCategory) spinner.getSelectedItem();
                                 competitor.wjrCategoryId = category.wjrCategoryId;
-                                competitor.wjrId = wjrId;
                                 competitor.nfcTagId = nfcId;
                                 showStart(competitor);
 
@@ -476,7 +475,6 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                 public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                     // Bring up start confirmation screen
                     Competitor competitor = (Competitor) adapterView.getItemAtPosition(i);
-                    competitor.wjrId = wjrId;
                     competitor.nfcTagId = nfcId;
                     showStart(competitor);
                     alertDialog.dismiss();
