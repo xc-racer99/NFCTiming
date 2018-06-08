@@ -46,6 +46,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
     public static final String SELECTED_EVENT_KEY = "SELECTED_WJR_EVENT";
     public static final String WJR_USERNAME = "WJR_USERNAME";
     public static final String WJR_PASSWORD = "WJR_PASSWORD";
+    public static final String SAVE_WJR_CREDENTIALS = "WJR_SAVE";
 
     // Database name
     public static final String DATABASE_NAME = "wjr_database";

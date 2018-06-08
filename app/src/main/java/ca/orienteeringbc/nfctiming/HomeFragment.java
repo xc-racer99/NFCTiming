@@ -35,18 +35,12 @@ import java.util.List;
 
 import static ca.orienteeringbc.nfctiming.MainActivity.SELECTED_CLUB_KEY;
 import static ca.orienteeringbc.nfctiming.MainActivity.SELECTED_EVENT_KEY;
-import static ca.orienteeringbc.nfctiming.MainActivity.WJR_PASSWORD;
-import static ca.orienteeringbc.nfctiming.MainActivity.WJR_USERNAME;
 
 
 /**
  * A simple {@link Fragment} subclass.
  */
 public class HomeFragment extends Fragment implements View.OnClickListener, AdapterView.OnItemSelectedListener {
-    // Password and username field
-    private EditText wjrUsername;
-    private EditText wjrPassword;
-
     // A list of all clubs in WJR database
     private Spinner clubSpinner;
     private List<Entry> mClubList = new ArrayList<>();
@@ -116,20 +110,11 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
         // Initialize sharedPrefs
         sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
 
-        // Setup EditTexts
-        wjrPassword = view.findViewById(R.id.wjr_pass);
-        wjrUsername = view.findViewById(R.id.wjr_user);
-
-        wjrUsername.setText(sharedPref.getString(WJR_USERNAME, ""));
-        wjrPassword.setText(sharedPref.getString(WJR_PASSWORD, ""));
-
         // Set button listener
-        Button savePrefs = view.findViewById(R.id.save_credentials);
         Button getClubs = view.findViewById(R.id.get_clubs);
         getEvents = view.findViewById(R.id.get_events);
         getCompetitors = view.findViewById(R.id.get_competitors);
 
-        savePrefs.setOnClickListener(this);
         getClubs.setOnClickListener(this);
         getEvents.setOnClickListener(this);
         getCompetitors.setOnClickListener(this);
@@ -203,13 +188,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
                     Log.e("Test", "Url is " + url);
                     new DownloadEntryListTask(getActivity()).execute(url);
                 }
-                break;
-            case R.id.save_credentials:
-                SharedPreferences.Editor editor = sharedPref.edit();
-                editor.putString(WJR_USERNAME, wjrUsername.getText().toString());
-                editor.putString(WJR_PASSWORD, wjrPassword.getText().toString());
-                editor.apply();
-
                 break;
         }
     }

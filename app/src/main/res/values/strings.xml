@@ -59,6 +59,7 @@
     <string name="status_on_course">On Course</string>
     <string name="success_uploading">Server Replied %1$s</string>
     <string name="error_uploading">Encountered an error connecting to server</string>
+    <string name="save_password">Save Password</string>
 
     <!-- Common -->
     <string name="no_event">No Event Selected</string>

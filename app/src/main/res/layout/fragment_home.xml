@@ -16,75 +16,6 @@
             android:visibility="invisible"/>
 
         <TextView
-            android:id="@+id/wjr_credentials"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/wjr_credentials"/>
-
-        <TextView
-            android:id="@+id/wjr_credential_reason"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/wjr_credentials"
-            android:text="@string/wjr_credential_reason"/>
-
-        <TextView
-            android:id="@+id/username_title"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_alignRight="@id/strut"
-            android:layout_alignEnd="@+id/strut"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true"
-            android:layout_alignTop="@+id/wjr_user"
-            android:layout_alignBottom="@+id/wjr_user"
-            android:gravity="center_vertical"
-            android:text="@string/wjr_username"/>
-        <EditText
-            android:id="@+id/wjr_user"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_alignLeft="@id/strut"
-            android:layout_alignStart="@+id/strut"
-            android:layout_alignParentRight="true"
-            android:layout_alignParentEnd="true"
-            android:layout_below="@+id/wjr_credential_reason"
-            android:hint="@string/wjr_username"
-            android:inputType="text"/>
-
-        <TextView
-            android:id="@+id/wjr_pass_title"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_alignRight="@id/strut"
-            android:layout_alignEnd="@+id/strut"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true"
-            android:layout_alignTop="@+id/wjr_pass"
-            android:layout_alignBottom="@+id/wjr_pass"
-            android:gravity="center_vertical"
-            android:text="@string/wjr_pass"/>
-
-        <EditText
-            android:id="@+id/wjr_pass"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_alignLeft="@id/strut"
-            android:layout_alignStart="@+id/strut"
-            android:layout_alignParentRight="true"
-            android:layout_alignParentEnd="true"
-            android:layout_below="@+id/wjr_user"
-            android:hint="@string/wjr_pass"
-            android:inputType="textPassword"/>
-
-        <Button
-            android:id="@+id/save_credentials"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/wjr_pass"
-            android:text="@string/save_credentials"/>
-
-        <TextView
             android:id="@+id/club_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -104,8 +35,7 @@
             android:layout_alignLeft="@id/strut"
             android:layout_alignStart="@+id/strut"
             android:layout_alignParentRight="true"
-            android:layout_alignParentEnd="true"
-            android:layout_below="@+id/save_credentials">
+            android:layout_alignParentEnd="true">
 
         </Spinner>
 

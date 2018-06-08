@@ -1,8 +1,10 @@
 package ca.orienteeringbc.nfctiming;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.arch.persistence.room.Room;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -12,6 +14,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -48,7 +52,7 @@ public class FinishFragment extends Fragment {
         view = inflater.inflate(R.layout.fragment_finish, container, false);
 
         // Initialize shared prefs
-        SharedPreferences sharedPrefs = getActivity().getPreferences(Context.MODE_PRIVATE);
+        final SharedPreferences sharedPrefs = getActivity().getPreferences(Context.MODE_PRIVATE);
 
         // Initialize database
         database = Room.databaseBuilder(getActivity().getApplicationContext(), WjrDatabase.class, MainActivity.DATABASE_NAME)
@@ -62,16 +66,44 @@ public class FinishFragment extends Fragment {
         if (eventId > 0) {
             Button uploadResults = view.findViewById(R.id.upload_results);
 
-            String pass = sharedPrefs.getString(MainActivity.WJR_USERNAME, "");
-            String user = sharedPrefs.getString(MainActivity.WJR_PASSWORD, "");
-            if (!pass.isEmpty() && !user.isEmpty())
-                uploadResults.setEnabled(true);
-
             uploadResults.setEnabled(true);
             uploadResults.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    new UploadResultsTask(getActivity(), database, eventId).execute();
+                    LayoutInflater layoutInflaterAndroid = LayoutInflater.from(getActivity());
+                    View mView = layoutInflaterAndroid.inflate(R.layout.upload_results_dialog, null);
+                    AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(getActivity());
+                    alertDialogBuilder.setView(mView);
+
+                    final EditText username = mView.findViewById(R.id.username_input);
+                    final EditText password = mView.findViewById(R.id.password_input);
+                    final CheckBox save_pass = mView.findViewById(R.id.save_pass_checkbox);
+
+                    username.setText(sharedPrefs.getString(MainActivity.WJR_USERNAME, null));
+                    password.setText(sharedPrefs.getString(MainActivity.WJR_PASSWORD, null));
+                    save_pass.setChecked(sharedPrefs.getBoolean(MainActivity.SAVE_WJR_CREDENTIALS, true));
+
+                    alertDialogBuilder.setPositiveButton(R.string.upload_results, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            SharedPreferences.Editor editor = sharedPrefs.edit();
+                            if (save_pass.isChecked()) {
+                                // Save credentials
+                                editor.putString(MainActivity.WJR_PASSWORD, password.getText().toString());
+                            }
+                            editor.putString(MainActivity.WJR_USERNAME, username.getText().toString());
+                            editor.putBoolean(MainActivity.SAVE_WJR_CREDENTIALS, save_pass.isChecked());
+                            editor.apply();
+
+                            new UploadResultsTask(getActivity(), database, eventId,
+                                    username.getText().toString(), password.getText().toString()).execute();
+                        }
+                    }).setNegativeButton(R.string.cancel,
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialogBox, int id) {
+                                    dialogBox.cancel();
+                                }
+                    }).show();
                 }
             });
         }
@@ -177,11 +209,14 @@ public class FinishFragment extends Fragment {
         private final WeakReference<Activity> weakActivity;
         private WjrDatabase database;
         private int eventId;
+        private final String basicAuth;
 
-        UploadResultsTask(Activity activity, WjrDatabase database, int eventId) {
+        UploadResultsTask(Activity activity, WjrDatabase database, int eventId, String username, String password) {
             weakActivity = new WeakReference<>(activity);
             this.database = database;
             this.eventId = eventId;
+
+            basicAuth = "Basic " + Base64.encodeToString(new String(username + ":" + password).getBytes(), Base64.NO_WRAP);
         }
 
         @Override
@@ -196,7 +231,7 @@ public class FinishFragment extends Fragment {
                 if (out2 != null)
                     out2.close();
 
-                HttpURLConnection connection = uploadUrl("https://whyjustrun.ca/iof/3.0/events/" + eventId + "/result_list.xml", weakActivity);
+                HttpURLConnection connection = uploadUrl("https://whyjustrun.ca/iof/3.0/events/" + eventId + "/result_list.xml", basicAuth, weakActivity);
                 if (connection == null)
                     return false;
                 out = connection.getOutputStream();
@@ -230,8 +265,8 @@ public class FinishFragment extends Fragment {
     }
 
     // Given a string representation of a URL, sets up a connection and gets
-    // an output stream.
-    private static HttpURLConnection uploadUrl(String urlString, WeakReference<Activity> weakActivity) throws IOException {
+    // an output stream
+    private static HttpURLConnection uploadUrl(String urlString, String basicAuth, WeakReference<Activity> weakActivity) throws IOException {
         // Re-acquire a strong reference to the activity, and verify
         // that it still exists and is active.
         final Activity activity = weakActivity.get();
@@ -241,10 +276,6 @@ public class FinishFragment extends Fragment {
             // activity is no longer valid, don't do anything!
             return null;
         }
-        SharedPreferences sharedPrefs = activity.getPreferences(Context.MODE_PRIVATE);
-        String pass = sharedPrefs.getString(MainActivity.WJR_USERNAME, "");
-        String user = sharedPrefs.getString(MainActivity.WJR_PASSWORD, "");
-        final String basicAuth = "Basic " + Base64.encodeToString((pass + ":" + user).getBytes(), Base64.NO_WRAP);
 
         URL url = new URL(urlString);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
