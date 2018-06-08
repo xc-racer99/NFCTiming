@@ -61,7 +61,27 @@ public interface DaoAccess {
     @Insert (onConflict = OnConflictStrategy.REPLACE)
     void addEvent(WjrEvent event);
 
+    @Insert (onConflict = OnConflictStrategy.REPLACE)
+    void addEventsList(List<WjrEvent> events);
+
     // WjrEvent queries
     @Query("SELECT eventName FROM WjrEvent WHERE wjrId = :wjrEventId")
     String getEventNameById(int wjrEventId);
+
+    @Query("SELECT * FROM WjrEvent WHERE wjrClubId = :wjrClubId")
+    List<WjrEvent> getEventsByClub(int wjrClubId);
+
+    // WjrClub setter
+    @Insert (onConflict = OnConflictStrategy.REPLACE)
+    void addClub(WjrClub... clubs);
+
+    @Insert (onConflict =  OnConflictStrategy.REPLACE)
+    void addClubsList(List<WjrClub> clubs);
+
+    // WjrClub queries
+    @Query("DELETE FROM WjrClub")
+    void deleteAllClubs();
+
+    @Query("SELECT * FROM WjrClub ORDER BY wjrId ASC")
+    List<WjrClub> getAllClubs();
 }

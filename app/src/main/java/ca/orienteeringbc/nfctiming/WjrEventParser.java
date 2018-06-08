@@ -12,8 +12,7 @@
  * the License.
  *
  * Created by jon on 12/03/18.
- * Designed to read https://whyjustrun.ca/iof/3.0/organization_list.xml
- * and return the club (short) name and WJR id
+ * Designed to read a club's events and return a list of WjrEvent
  */
 
 package ca.orienteeringbc.nfctiming;
@@ -38,7 +37,7 @@ public class WjrEventParser {
 
     // We don't use namespaces
 
-    public List<HomeFragment.Entry> parse(InputStream in) throws XmlPullParserException, IOException {
+    public List<WjrEvent> parse(InputStream in) throws XmlPullParserException, IOException {
         try {
             XmlPullParser parser = Xml.newPullParser();
             parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
@@ -50,8 +49,8 @@ public class WjrEventParser {
         }
     }
 
-    private List<HomeFragment.Entry> readFeed(XmlPullParser parser) throws XmlPullParserException, IOException {
-        List<HomeFragment.Entry> entries = new ArrayList<>();
+    private List<WjrEvent> readFeed(XmlPullParser parser) throws XmlPullParserException, IOException {
+        List<WjrEvent> entries = new ArrayList<>();
 
         parser.require(XmlPullParser.START_TAG, ns, "EventList");
         while (parser.next() != XmlPullParser.END_TAG) {
@@ -71,24 +70,32 @@ public class WjrEventParser {
 
     // Parses the contents of an organisation. If it encounters a ShortName or Id tag, hands them
     // off to their respective methods for processing. Otherwise, skips the tag.
-    private HomeFragment.Entry readEvent(XmlPullParser parser) throws XmlPullParserException, IOException {
+    private WjrEvent readEvent(XmlPullParser parser) throws XmlPullParserException, IOException {
         parser.require(XmlPullParser.START_TAG, ns, "Event");
         int id = -1;
-        String clubName = null;
+        int clubId = -1;
+        String eventName = null;
         while (parser.next() != XmlPullParser.END_TAG) {
             if (parser.getEventType() != XmlPullParser.START_TAG) {
                 continue;
             }
             String name = parser.getName();
-            if (name.equals("Id")) {
-                id = readId(parser);
-            } else if (name.equals("Name")) {
-                clubName = readName(parser);
-            } else {
-                skip(parser);
+            switch (name) {
+                case "Id":
+                    id = readId(parser);
+                    break;
+                case "Name":
+                    eventName = readName(parser);
+                    break;
+                case "Organiser":
+                    clubId = readOrganiserId(parser);
+                    break;
+                default:
+                    skip(parser);
+                    break;
             }
         }
-        return new HomeFragment.Entry(clubName, id);
+        return new WjrEvent(id, clubId, eventName);
     }
 
     // Processes title tags in the feed.
@@ -105,6 +112,28 @@ public class WjrEventParser {
         String name = readText(parser);
         parser.require(XmlPullParser.END_TAG, ns, "Name");
         return name;
+    }
+
+    // Processes Organiser tags
+    private int readOrganiserId(XmlPullParser parser) throws IOException, XmlPullParserException {
+        int eventId = -1;
+        parser.require(XmlPullParser.START_TAG, ns, "Organiser");
+        while (parser.next() != XmlPullParser.END_TAG) {
+            if (parser.getEventType() != XmlPullParser.START_TAG) {
+                continue;
+            }
+            String name = parser.getName();
+            switch (name) {
+                case "Id":
+                    eventId = readId(parser);
+                    break;
+                default:
+                    skip(parser);
+                    break;
+            }
+        }
+        parser.require(XmlPullParser.END_TAG, ns, "Organiser");
+        return eventId;
     }
 
     // Extracts the text value of a text

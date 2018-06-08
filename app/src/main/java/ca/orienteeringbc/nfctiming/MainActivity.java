@@ -145,7 +145,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
         // Initialize database
         database = Room.databaseBuilder(getApplicationContext(), WjrDatabase.class, MainActivity.DATABASE_NAME)
                 .fallbackToDestructiveMigration()
-                .addMigrations(WjrDatabase.MIGRATION_1_2)
+                .addMigrations(WjrDatabase.MIGRATION_1_2, WjrDatabase.MIGRATION_2_3)
                 .build();
 
         // Initialize NFC PendingIntent

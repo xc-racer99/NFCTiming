@@ -38,7 +38,7 @@ public class WjrClubParser {
 
     // We don't use namespaces
 
-    public List<HomeFragment.Entry> parse(InputStream in) throws XmlPullParserException, IOException {
+    public List<WjrClub> parse(InputStream in) throws XmlPullParserException, IOException {
         try {
             XmlPullParser parser = Xml.newPullParser();
             parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
@@ -50,8 +50,8 @@ public class WjrClubParser {
         }
     }
 
-    private List<HomeFragment.Entry> readFeed(XmlPullParser parser) throws XmlPullParserException, IOException {
-        List<HomeFragment.Entry> entries = new ArrayList<>();
+    private List<WjrClub> readFeed(XmlPullParser parser) throws XmlPullParserException, IOException {
+        List<WjrClub> entries = new ArrayList<>();
 
         parser.require(XmlPullParser.START_TAG, ns, "OrganisationList");
         while (parser.next() != XmlPullParser.END_TAG) {
@@ -71,7 +71,7 @@ public class WjrClubParser {
 
     // Parses the contents of an organisation. If it encounters a ShortName or Id tag, hands them
     // off to their respective methods for processing. Otherwise, skips the tag.
-    private HomeFragment.Entry readOrganisation(XmlPullParser parser) throws XmlPullParserException, IOException {
+    private WjrClub readOrganisation(XmlPullParser parser) throws XmlPullParserException, IOException {
         parser.require(XmlPullParser.START_TAG, ns, "Organisation");
         int id = -1;
         String clubName = null;
@@ -80,15 +80,19 @@ public class WjrClubParser {
                 continue;
             }
             String name = parser.getName();
-            if (name.equals("Id")) {
-                id = readId(parser);
-            } else if (name.equals("ShortName")) {
-                clubName = readName(parser);
-            } else {
-                skip(parser);
+            switch (name) {
+                case "Id":
+                    id = readId(parser);
+                    break;
+                case "ShortName":
+                    clubName = readName(parser);
+                    break;
+                default:
+                    skip(parser);
+                    break;
             }
         }
-        return new HomeFragment.Entry(clubName, id);
+        return new WjrClub(id, clubName);
     }
 
     // Processes title tags in the feed.

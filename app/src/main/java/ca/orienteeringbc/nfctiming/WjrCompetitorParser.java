@@ -33,6 +33,7 @@ public class WjrCompetitorParser {
 
     private HomeFragment.EventInfo eventInfo;
     private int eventId = -1;
+    private int clubId = -1;
     private String eventName;
 
     public HomeFragment.EventInfo parse(InputStream in) throws XmlPullParserException, IOException {
@@ -90,12 +91,15 @@ public class WjrCompetitorParser {
                 case "Class":
                     eventInfo.categories.add(readCategory(parser));
                     break;
+                case "Organiser":
+                    clubId = readOrganiserId(parser);
+                    break;
                 default:
                     skip(parser);
                     break;
             }
         }
-        eventInfo.event = new WjrEvent(eventId, eventName);
+        eventInfo.event = new WjrEvent(eventId, clubId, eventName);
     }
 
     // Processes title tags in the feed.
@@ -112,6 +116,28 @@ public class WjrCompetitorParser {
         String name = readText(parser);
         parser.require(XmlPullParser.END_TAG, ns, "Name");
         return name;
+    }
+
+    // Processes Organiser tags
+    private int readOrganiserId(XmlPullParser parser) throws IOException, XmlPullParserException {
+        int eventId = -1;
+        parser.require(XmlPullParser.START_TAG, ns, "Organiser");
+        while (parser.next() != XmlPullParser.END_TAG) {
+            if (parser.getEventType() != XmlPullParser.START_TAG) {
+                continue;
+            }
+            String name = parser.getName();
+            switch (name) {
+                case "Id":
+                    eventId = readId(parser);
+                    break;
+                default:
+                    skip(parser);
+                    break;
+            }
+        }
+        parser.require(XmlPullParser.END_TAG, ns, "Organiser");
+        return eventId;
     }
 
     // Processes Class tags in the feed

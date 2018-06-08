@@ -13,10 +13,17 @@ public class WjrEvent {
     @PrimaryKey
     public int wjrId;
 
+    public int wjrClubId;
+
     public String eventName;
 
-    public WjrEvent(int wjrId, String eventName) {
+    public WjrEvent(int wjrId, int wjrClubId, String eventName) {
         this.wjrId = wjrId;
+        this.wjrClubId = wjrClubId;
         this.eventName = eventName;
+    }
+
+    public String toString() {
+        return eventName;
     }
 }

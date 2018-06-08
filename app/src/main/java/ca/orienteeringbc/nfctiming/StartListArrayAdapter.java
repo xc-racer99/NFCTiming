@@ -35,7 +35,7 @@ public class StartListArrayAdapter extends ArrayAdapter<Competitor> {
         // Initialize database
         database = Room.databaseBuilder(context.getApplicationContext(), WjrDatabase.class, MainActivity.DATABASE_NAME)
                 .fallbackToDestructiveMigration()
-                .addMigrations(WjrDatabase.MIGRATION_1_2)
+                .addMigrations(WjrDatabase.MIGRATION_1_2, WjrDatabase.MIGRATION_2_3)
                 .build();
     }
 
