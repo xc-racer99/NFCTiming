@@ -144,6 +144,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
         // Initialize database
         database = Room.databaseBuilder(getApplicationContext(), WjrDatabase.class, MainActivity.DATABASE_NAME)
                 .fallbackToDestructiveMigration()
+                .addMigrations(WjrDatabase.MIGRATION_1_2)
                 .build();
 
         // Initialize NFC PendingIntent
@@ -513,6 +514,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
     // Called when competitor has finished
     private void showFinish(final Competitor competitor) {
         competitor.endTime = System.currentTimeMillis() / 1000;
+        competitor.status = Competitor.statusToInt("OK");
         AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(MainActivity.this);
         alertDialogBuilder.setMessage(getString(R.string.confirm_finish_msg, competitor.toString()))
                 .setTitle(R.string.confirm_finish)
@@ -561,6 +563,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                 .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialogInterface, int which) {
                         competitor.endTime = newEndTime;
+                        competitor.status = Competitor.statusToInt("OK");
                         new UpdateCompetitorTask(database).execute(competitor);
                         dialogInterface.dismiss();
                         updateFinishFrag();
@@ -589,6 +592,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                 .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialogInterface, int which) {
                         competitor.startTime = System.currentTimeMillis() / 1000;
+                        competitor.status = Competitor.statusToInt("DNF");
                         new UpdateCompetitorTask(database).execute(competitor);
                         dialogInterface.dismiss();
                         updateFinishFrag();

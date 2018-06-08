@@ -56,6 +56,7 @@
     <string name="upload_results">Upload Results</string>
     <string name="status_dns">DNS</string>
     <string name="status_dnf">DNF</string>
+    <string name="status_on_course">On Course</string>
     <string name="success_uploading">Server Replied %1$s</string>
     <string name="error_uploading">Encountered an error connecting to server</string>
 

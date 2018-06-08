@@ -109,8 +109,8 @@ public class UploadResultsXml {
 
         // Result start
         serializer.startTag(ns, "Result");
-        if (competitor.startTime != 0 && competitor.endTime != 0) {
-            // Competitor finished, return increased position
+        if (competitor.status == Competitor.statusToInt("OK")) {
+            // Competitor finished properly, return increased position
             ret = true;
 
             // Time
@@ -123,16 +123,10 @@ public class UploadResultsXml {
             serializer.attribute(ns, "type", "Course");
             serializer.text(String.valueOf(pos));
             serializer.endTag(ns, "Position");
-
-            // Status
-            writeStatus(serializer, "OK");
-        } else if (competitor.startTime > 0){
-            // Competitor didn't finish
-            writeStatus(serializer, "DidNotFinish");
-        } else {
-            // Competitor didn't start
-            writeStatus(serializer, "DidNotStart");
         }
+        // Status
+        writeStatus(serializer, Competitor.longStatuses[competitor.status]);
+
         serializer.endTag(ns, "Result");
 
         serializer.endTag(ns, "PersonResult");

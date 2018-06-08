@@ -14,6 +14,9 @@ import android.arch.persistence.room.PrimaryKey;
         foreignKeys = @ForeignKey(entity = WjrEvent.class, parentColumns = "wjrId", childColumns = "wjrEventId"),
         indices = {@Index(value = { "firstName", "lastName", "wjrEventId", "wjrId" }, unique = true)})
 public class Competitor {
+    public static String[] statuses = {"DNS", "DNF", "OK", "MP", "NC"};
+    public static String[] longStatuses = {"DidNotStart", "DidNotFinish", "OK", "MissingPunch", "NotCompeting"};
+
     @PrimaryKey(autoGenerate = true)
     int internalId;
 
@@ -34,6 +37,9 @@ public class Competitor {
     public long startTime = 0;
     public long endTime = 0;
 
+    // DNS
+    public int status = 0;
+
     public Competitor(int wjrEventId, String firstName, String lastName) {
         this.wjrEventId = wjrEventId;
         this.firstName = firstName;
@@ -50,9 +56,26 @@ public class Competitor {
         this.wjrCategoryId = competitor.wjrCategoryId;
         this.startTime = competitor.startTime;
         this.endTime = competitor.endTime;
+        this.status = competitor.status;
     }
 
     public String toString() {
         return firstName + " " + lastName;
+    }
+
+    public static int statusToInt(String status) {
+        switch (status) {
+            case "DNS":
+                return 0;
+            case "DNF":
+                return 1;
+            case "OK":
+                return 2;
+            case "MP":
+                return 3;
+            case "NC":
+                return 4;
+        }
+        return -1;
     }
 }

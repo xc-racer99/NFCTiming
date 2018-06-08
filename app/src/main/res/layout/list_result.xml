@@ -14,7 +14,15 @@
         android:id="@+id/status_field"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true"
+        android:layout_toLeftOf="@id/status_spinner"
         android:padding="4dp" />
+
+    <Spinner
+        android:id="@+id/status_spinner"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true">
+
+    </Spinner>
 </RelativeLayout>

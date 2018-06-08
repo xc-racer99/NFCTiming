@@ -596,6 +596,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
             // Initialize database
             WjrDatabase database = Room.databaseBuilder(activity.getApplicationContext(), WjrDatabase.class, MainActivity.DATABASE_NAME)
                     .fallbackToDestructiveMigration()
+                    .addMigrations(WjrDatabase.MIGRATION_1_2)
                     .build();
 
 
