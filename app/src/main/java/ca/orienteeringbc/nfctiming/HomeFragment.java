@@ -165,7 +165,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
                     long start = now - 604800;
                     long end = now + 604800;
                     String url = "https://whyjustrun.ca/events.xml?iof_version=3.0&start=" + start + "&end=" + end + "&club_id=" + clubId;
-                    new DownloadEventTask(getActivity(), database).execute(url);
+                    new DownloadEventTask(getActivity(), database, clubId).execute(url);
                 }
                 break;
             case R.id.get_competitors:
@@ -427,16 +427,18 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
     private static class DownloadEventTask extends AsyncTask<String, Void, List<WjrEvent>> {
         private final WeakReference<Activity> weakActivity;
         private final WjrDatabase database;
+        private final int clubId;
 
-        DownloadEventTask(Activity activity, WjrDatabase database) {
+        DownloadEventTask(Activity activity, WjrDatabase database, int clubId) {
             weakActivity = new WeakReference<>(activity);
             this.database = database;
+            this.clubId = clubId;
         }
 
         @Override
         protected List<WjrEvent> doInBackground(String... urls) {
             try {
-                return updateEvents(urls[0], database);
+                return updateEvents(urls[0], database, clubId);
             } catch (IOException e) {
                 return null;
             } catch (XmlPullParserException e) {
@@ -461,7 +463,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
             if (mainActivity.currentFrame == MainActivity.FrameType.HomeFrag) {
                 HomeFragment fragment = (HomeFragment) mainActivity.getSupportFragmentManager().findFragmentById(R.id.frame_fragmentholder);
                 if (events != null) {
-                    fragment.eventId = -1;
                     fragment.mEventList = events;
 
                     // Enable event spinner
@@ -523,8 +524,11 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
             if (stream != null) {
                 clubs = xmlParser.parse(stream);
 
-                // Save to DB
-                database.daoAccess().addClubsList(clubs);
+                // Save to DB, removing all old entries
+                if (clubs.size() > 0) {
+                    database.daoAccess().deleteAllClubs();
+                    database.daoAccess().addClubsList(clubs);
+                }
             } else {
                 Log.e("UpdateClubs", "Failed due to null stream");
             }
@@ -540,7 +544,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
     }
 
     // Downloads club xml and parses
-    private static List<WjrEvent> updateEvents(String urlString, WjrDatabase database)
+    private static List<WjrEvent> updateEvents(String urlString, WjrDatabase database, int clubId)
             throws XmlPullParserException, IOException {
         InputStream stream = null;
         List<WjrEvent> events = null;
@@ -549,10 +553,26 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
         try {
             stream = downloadUrl(urlString);
             if (stream != null) {
+                List<Integer> curEvents = new ArrayList<>();
                 events = xmlParser.parse(stream);
 
-                // Update DB
+                // Update DB, clearing out old data
+                for (int i = 0; i < events.size(); i++) {
+                    curEvents.add(events.get(i).wjrId);
+                }
+                // Delete competitors from events not current
+                int[] eventsForRemoval = database.daoAccess().getEventsToRemove(clubId, curEvents);
+                database.daoAccess().cleanupOldCompetitors(eventsForRemoval);
+
+                // Delete old categories
+                database.daoAccess().cleanupOldCategories(eventsForRemoval);
+
+                // Delete old events
+                database.daoAccess().deleteOldEvents(clubId, curEvents);
+
+                // Add new events
                 database.daoAccess().addEventsList(events);
+                Log.d(TAG, "Successfully removed old events and added new ones");
             } else {
                 Log.e("UpdateEvents", "Couldn't get network stream");
             }

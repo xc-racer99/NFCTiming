@@ -49,6 +49,10 @@ public interface DaoAccess {
     @Query("SELECT * FROM Competitor WHERE wjrEventId = :wjrEventId AND wjrCategoryId = :wjrCatId ORDER BY endTime - startTime")
     List<Competitor> getResultsByCategory(int wjrEventId, int wjrCatId);
 
+    // Competitor cleanup
+    @Query("DELETE FROM Competitor WHERE wjrEventId IN (:oldEvents)")
+    void cleanupOldCompetitors(int[] oldEvents);
+
     // WjrCategory setter
     @Insert (onConflict = OnConflictStrategy.REPLACE)
     void addCategories(List<WjrCategory> categoryList);
@@ -56,6 +60,9 @@ public interface DaoAccess {
     // WjrCategory queries
     @Query("SELECT * FROM WjrCategory WHERE wjrEventId = :wjrEventId")
     List<WjrCategory> getCategoryById(int wjrEventId);
+
+   @Query("DELETE FROM WjrCategory WHERE wjrEventId IN (:oldEvents)")
+   void cleanupOldCategories(int[] oldEvents);
 
     // WjrEvent setter
     @Insert (onConflict = OnConflictStrategy.REPLACE)
@@ -70,6 +77,12 @@ public interface DaoAccess {
 
     @Query("SELECT * FROM WjrEvent WHERE wjrClubId = :wjrClubId")
     List<WjrEvent> getEventsByClub(int wjrClubId);
+
+    @Query("SELECT wjrId FROM WjrEvent WHERE wjrClubId = :wjrClubId AND NOT wjrId IN (:currentEvents)")
+    int[] getEventsToRemove(int wjrClubId, List<Integer> currentEvents);
+
+    @Query("DELETE FROM WjrEvent WHERE wjrClubId = :wjrClubId AND NOT wjrId IN (:currentEvents)")
+    void deleteOldEvents(int wjrClubId, List<Integer> currentEvents);
 
     // WjrClub setter
     @Insert (onConflict = OnConflictStrategy.REPLACE)
