@@ -277,7 +277,7 @@ public class FinishFragment extends Fragment {
                             }).setNegativeButton(R.string.cancel, null);
                 } else {
                     // Unknown error, presumably due to incorrect password
-                    builder.setMessage(R.string.internal_error_replay)
+                    builder.setMessage(activity.getString(R.string.internal_error_reply, res))
                             .setPositiveButton(R.string.ok, null);
                 }
             } else {
