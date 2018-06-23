@@ -241,6 +241,7 @@ public class FinishFragment extends Fragment {
                 new UploadResultsXml().makeXml(out, database, eventId, compat[0]);
 
                 res = connection.getResponseMessage();
+                resInt = connection.getResponseCode();
             } catch (IOException e) {
                 return false;
             }
