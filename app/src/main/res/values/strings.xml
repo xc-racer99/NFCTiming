@@ -34,6 +34,7 @@
     <string name="get_competitors">Download Start List</string>
     <string name="entry_list_success">Successfully downloaded and imported entries</string>
     <string name="entry_list_failure">Failed to download or import entries</string>
+    <string name="version_string">Version: %1$s</string>
 
 
     <!-- Start List -->

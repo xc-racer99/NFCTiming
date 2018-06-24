@@ -5,6 +5,8 @@ import android.app.Activity;
 import android.arch.persistence.room.Room;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -17,6 +19,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.xmlpull.v1.XmlPullParserException;
@@ -117,6 +120,16 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
                 .fallbackToDestructiveMigration()
                 .addMigrations(WjrDatabase.MIGRATION_1_2, WjrDatabase.MIGRATION_2_3)
                 .build();
+
+        // Setup version info
+        try {
+            PackageInfo pInfo = getActivity().getPackageManager().getPackageInfo(getActivity().getPackageName(), 0);
+            String version = pInfo.versionName;
+            TextView versionView = view.findViewById(R.id.version);
+            versionView.setText(getString(R.string.version_string, version));
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
 
         // Set button listener
         Button getClubs = view.findViewById(R.id.get_clubs);
@@ -233,6 +246,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
     }
 
     /**
+     * Fetch all clubs and events for the chosen club (if applicable)
      * ids[0] is club id
      */
     private static class InitialSpinnerSetupTask extends  AsyncTask<Integer, Void, Void> {
@@ -280,6 +294,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
     }
 
     /**
+     * Fetches the events from the database for a specific club
      * ids[0] is club id
      */
     private static class UpdateEventSpinnerTask extends  AsyncTask<Integer, Void, Void> {

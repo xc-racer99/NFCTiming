@@ -2,6 +2,9 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 26
+
+    def gitCommitCount = "git rev-list HEAD --count".execute().text.trim()
+
     defaultConfig {
         applicationId "ca.orienteeringbc.nfctiming"
         minSdkVersion 17
@@ -12,7 +15,12 @@ android {
         vectorDrawables.useSupportLibrary = true
     }
     buildTypes {
+        debug {
+            versionNameSuffix ".${gitCommitCount}"
+        }
+
         release {
+            versionNameSuffix ".${gitCommitCount}"
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
