@@ -8,11 +8,12 @@ import android.arch.persistence.room.PrimaryKey;
 /**
  * Created by jon on 13/03/18.
  * Contains info for each competitor in an event
+ * Differs from WjrPerson in that it contains race-specific data
  */
 
 @Entity (
         foreignKeys = @ForeignKey(entity = WjrEvent.class, parentColumns = "wjrId", childColumns = "wjrEventId"),
-        indices = {@Index(value = { "firstName", "lastName", "wjrEventId", "wjrId" }, unique = true)})
+        indices = {@Index(value = { "firstName", "lastName", "wjrEventId", "wjrId" }), @Index(value = {"wjrEventId"})})
 public class Competitor {
     public static String[] statuses = {"DNS", "DNF", "OK", "MP", "NC"};
     public static String[] longStatuses = {"DidNotStart", "DidNotFinish", "OK", "MissingPunch", "NotCompeting"};
@@ -25,7 +26,7 @@ public class Competitor {
 
     public int wjrId = -1;
 
-    public long nfcTagId;
+    public long nfcTagId = -1;
 
     public String firstName;
 

@@ -97,4 +97,18 @@ public interface DaoAccess {
 
     @Query("SELECT * FROM WjrClub ORDER BY wjrId ASC")
     List<WjrClub> getAllClubs();
+
+    // WjrPerson setter
+    @Insert (onConflict = OnConflictStrategy.REPLACE)
+    void addPeopleList(List<WjrPerson> people);
+
+    // WjrPerson queries
+    @Query("DELETE FROM WjrPerson")
+    void deleteAllPeople();
+
+    @Query("SELECT * FROM WjrPerson ORDER BY LOWER(lastName) ASC")
+    List<WjrPerson> getAllPeople();
+
+    @Query("SELECT * FROM WjrPerson WHERE LOWER(lastName) = LOWER(:lastName) AND LOWER(firstName) = LOWER(:firstName)")
+    WjrPerson getPersonByName(String firstName, String lastName);
 }

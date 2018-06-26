@@ -56,7 +56,7 @@ public class StartFragment extends Fragment {
         // Initialize database
         database = Room.databaseBuilder(getActivity().getApplicationContext(), WjrDatabase.class, MainActivity.DATABASE_NAME)
                 .fallbackToDestructiveMigration()
-                .addMigrations(WjrDatabase.MIGRATION_1_2, WjrDatabase.MIGRATION_2_3)
+                .addMigrations(WjrDatabase.MIGRATION_1_2, WjrDatabase.MIGRATION_2_3, WjrDatabase.MIGRATION_3_4)
                 .build();
 
         eventId = sharedPrefs.getInt(MainActivity.SELECTED_EVENT_KEY, -1);
