@@ -352,9 +352,9 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
             competitor = database.daoAccess().getCompetitorByNfc(eventId, id[0]);
             if (competitor == null && id[1] > 0) {
                 Log.d("HandleCompetitor", "Didn't find Competitor by NFC tag #");
-                // Try and get competitor based on WJR ID
-                competitor = database.daoAccess().getCompetitorByWjrId(eventId, id[1].intValue());
-                if (competitor == null) {
+                // Try and get competitor (maybe multiple times) based on WJR ID
+                List<Competitor> thisCompetitors = database.daoAccess().getCompetitorsByWjrId(eventId, id[1].intValue());
+                if (thisCompetitors == null) {
                     Log.d("HandleCompetitor", "Didn't find Competitor by WJR ID");
                     // Assigned card, at start of first loop
                     WjrPerson person = database.daoAccess().getPersonById(id[1].intValue());
@@ -370,26 +370,40 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                         ret = SwipeType.StartAssigned;
                     }
                 } else {
-                    /* Assigned card, at start for next loop/course
-                     * Create duplicate competitor with default start/finish times
-                     */
-                    Log.d("HandleCompetitor", "Found competitor by WJR ID");
+                    Log.d("HandleCompetitor", "Found " + thisCompetitors.size() + " competitor(s) by WJR ID");
 
-                    Competitor oldCompetitor = new Competitor(competitor);
-                    competitor = new Competitor(eventId, oldCompetitor.firstName, oldCompetitor.lastName);
-                    competitor.nfcTagId = nfcId;
-                    if (oldCompetitor.wjrId > 0)
-                        competitor.wjrId = oldCompetitor.wjrId;
-                    // Set category to first one competitor hasn't run
-                    for (WjrCategory category : categories) {
-                        if (oldCompetitor.wjrCategoryId != category.wjrCategoryId) {
-                            competitor.wjrCategoryId = category.wjrCategoryId;
-                            break;
+                    if (thisCompetitors.get(0).endTime > 0) {
+                        Log.d("HandleCompetitor", "Found pre-registered, assigned card at 2+ start");
+                        /* Assigned card, at start for next loop/course
+                         * Create duplicate competitor with default start/finish times
+                         */
+                        competitor = new Competitor(eventId, thisCompetitors.get(0).firstName, thisCompetitors.get(0).lastName);
+                        competitor.nfcTagId = nfcId;
+                        if (thisCompetitors.get(0).wjrId > 0)
+                            competitor.wjrId = thisCompetitors.get(0).wjrId;
+                        // Set category to first one competitor hasn't run
+                        for (WjrCategory category : categories) {
+                            boolean found = true;
+                            for (Competitor comp : thisCompetitors) {
+                                if (comp.wjrCategoryId == category.wjrCategoryId) {
+                                    found = false;
+                                    break;
+                                }
+                            }
+
+                            if (found) {
+                                competitor.wjrCategoryId = category.wjrCategoryId;
+                                break;
+                            }
                         }
+                        // If we didn't find an unused category, use the first category
+                        if (competitor.wjrCategoryId < 0)
+                            competitor.wjrCategoryId = categories.get(0).wjrCategoryId;
+                    } else {
+                        Log.d("HandleCompetitor", "Found pre-registered, assigned card at first start");
+                        competitor = thisCompetitors.get(0);
+                        competitor.nfcTagId = nfcId;
                     }
-                    // If we didn't find an unused category, use the first category
-                    if (competitor.wjrCategoryId < 0)
-                        competitor.wjrCategoryId = categories.get(0).wjrCategoryId;
 
                     ret = SwipeType.StartAssigned;
                 }
