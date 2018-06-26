@@ -483,7 +483,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                             WjrCategory category = (WjrCategory) spinner.getSelectedItem();
                             competitor.wjrCategoryId = category.wjrCategoryId;
                             competitor.nfcTagId = nfcId;
-                            mainActivity.showStart(competitor, categories);
+                            mainActivity.showStart(competitor, null);
 
                             dialogInterface.dismiss();
                             alertDialog.dismiss();
@@ -518,21 +518,36 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
 
     /**
      * Called to confirm someone's start and optionally change their category
-     * TODO: Allow picking of category here
      * @param competitor Competitor containing NFC ID and optionally WJR ID
      * @param categories List of all categories for the event
      */
     private void showStart(final Competitor competitor, List<WjrCategory> categories) {
-        final Activity activity = this;
-        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(MainActivity.this);
+        final MainActivity mainActivity = this;
+        LayoutInflater layoutInflaterAndroid = LayoutInflater.from(mainActivity);
+        View mView = layoutInflaterAndroid.inflate(R.layout.alert_confirm_start, null);
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(mainActivity);
+        alertDialogBuilder.setView(mView);
+
+        // Setup category spinner, hiding it if no category info supplied
+        final Spinner catSpinner = mView.findViewById(R.id.cat_spinner);
+        if (categories != null) {
+            ArrayAdapter<WjrCategory> catAdapter = new ArrayAdapter<>(mainActivity, android.R.layout.simple_list_item_1, categories);
+            catSpinner.setAdapter(catAdapter);
+            catSpinner.setSelection(categoryIndexFromList(competitor.wjrCategoryId, categories));
+        } else {
+            catSpinner.setVisibility(View.GONE);
+        }
+
         alertDialogBuilder.setTitle(R.string.confirm_start)
                 .setMessage(getString(R.string.confirm_start_msg,
                         competitor.firstName + " " + competitor.lastName))
                 .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialogInterface, int which) {
+                        WjrCategory category = (WjrCategory) catSpinner.getSelectedItem();
+                        competitor.wjrCategoryId = category.wjrCategoryId;
                         competitor.startTime = System.currentTimeMillis() / 1000;
                         competitor.status = Competitor.statusToInt("DNF");
-                        new UpdateCompetitorTask(activity, database).execute(competitor);
+                        new UpdateCompetitorTask(mainActivity, database).execute(competitor);
                         dialogInterface.dismiss();
                     }})
                 .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
@@ -570,6 +585,20 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
             }
         });
         player.start();
+    }
+
+    /**
+     * Find index of a category id
+     * @param wjrCategoryId Desired category id
+     * @param categories List of categories for event
+     * @return Index (eg for setSelection) of category id in categories
+     */
+    private int categoryIndexFromList(int wjrCategoryId, List<WjrCategory> categories) {
+        for (int i = 0; i < categories.size(); i++) {
+            if (categories.get(i).wjrCategoryId == wjrCategoryId)
+                return i;
+        }
+        return -1;
     }
 
     /**
