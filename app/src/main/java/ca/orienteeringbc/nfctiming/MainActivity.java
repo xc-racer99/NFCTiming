@@ -1,5 +1,6 @@
 package ca.orienteeringbc.nfctiming;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.arch.persistence.room.Room;
@@ -7,6 +8,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.media.MediaPlayer;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
@@ -36,6 +38,7 @@ import android.widget.Spinner;
 import android.widget.Toast;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.List;
 
@@ -279,7 +282,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                                 // Remove WjrId: from start
                                 int wjrId = Integer.parseInt(string.substring(6));
                                 if (wjrId > 0) {
-                                    new CompetitorFromWjrIdTask().execute(Long.valueOf(wjrId), nfcId);
+                                    new CompetitorFromWjrIdTask(this, database, eventId).execute(Long.valueOf(wjrId), nfcId);
                                     return;
                                 }
                             }
@@ -291,7 +294,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
             }
         }
         // If we got here, then we didn't find an assigned card, use tag
-        new CompetitorFromNfcTagTask().execute(nfcId);
+        new CompetitorFromNfcTagTask(this, database, eventId).execute(nfcId);
     }
 
     private void addHomeFragment() {
@@ -327,8 +330,17 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
      *  Tries to find a Competitor by their NFC tag number (for non-assigned cards)
      *  For pre-assigned cards, see @CompetitorFromWjrIdTask
      */
-    private class CompetitorFromNfcTagTask extends AsyncTask<Long, Void, Competitor> {
+    private static class CompetitorFromNfcTagTask extends AsyncTask<Long, Void, Competitor> {
+        private final WeakReference<Activity> weakActivity;
+        WjrDatabase database;
+        int eventId;
         long nfcId;
+
+        CompetitorFromNfcTagTask(Activity activity, WjrDatabase database, int eventId) {
+            weakActivity = new WeakReference<>(activity);
+            this.database = database;
+            this.eventId = eventId;
+        }
 
         @Override
         protected Competitor doInBackground(Long... id) {
@@ -338,15 +350,24 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
 
         @Override
         protected void onPostExecute(Competitor competitor) {
+            // Re-acquire a strong reference to the activity, and verify
+            // that it still exists and is active.
+            Activity activity = weakActivity.get();
+            if (activity == null
+                    || activity.isFinishing()
+                    || activity.isDestroyed()) {
+                // activity is no longer valid, don't do anything!
+                return;
+            }
+
+            MainActivity mainActivity = (MainActivity) weakActivity.get();
+
             if (competitor == null) {
                 // Un-assigned card, at the start
-                new SelectCompetitorTask().execute(nfcId, Long.valueOf(-1));
+                new SelectCompetitorTask(mainActivity, database, eventId).execute(nfcId, Long.valueOf(-1));
             } else {
                 // Un-assigned card, at the finish
-                if (competitor.endTime > 0)
-                    showFinishOverride(competitor, true);
-                else
-                    showFinish(competitor);
+                mainActivity.doFinish(competitor);
             }
         }
     }
@@ -355,9 +376,18 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
      * Tries to find a competitor by their wjrId number from their pre-assigned card
      * For non-assigned cards, see @CompetitorFromNfcTagTask
      */
-    private class CompetitorFromWjrIdTask extends AsyncTask<Long, Void, Competitor> {
+    private static class CompetitorFromWjrIdTask extends AsyncTask<Long, Void, Competitor> {
+        private final WeakReference<Activity> weakActivity;
+        WjrDatabase database;
+        int eventId;
         long nfcId;
         int wjrId;
+
+        CompetitorFromWjrIdTask(Activity activity, WjrDatabase database, int eventId) {
+            weakActivity = new WeakReference<>(activity);
+            this.database = database;
+            this.eventId = eventId;
+        }
 
         @Override
         protected Competitor doInBackground(Long... wjrId) {
@@ -368,18 +398,27 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
 
         @Override
         protected void onPostExecute(Competitor competitor) {
+            // Re-acquire a strong reference to the activity, and verify
+            // that it still exists and is active.
+            Activity activity = weakActivity.get();
+            if (activity == null
+                    || activity.isFinishing()
+                    || activity.isDestroyed()) {
+                // activity is no longer valid, don't do anything!
+                return;
+            }
+
+            MainActivity mainActivity = (MainActivity) weakActivity.get();
+
             if (competitor == null) {
                 // Pre-assigned card, but didn't pre-register
-                new CompetitorFromNfcTagTask().execute(nfcId);
+                new CompetitorFromNfcTagTask(mainActivity, database, eventId).execute(nfcId);
             } else {
                 // Yay!  Pre-assigned card, pre-registered.  Now check if finished or not
                 if (competitor.startTime > 0)
-                    if (competitor.endTime > 0)
-                        showFinishOverride(competitor, false);
-                    else
-                        showFinish(competitor);
+                        mainActivity.doFinish(competitor);
                 else
-                    showStart(competitor);
+                    mainActivity.showStart(competitor);
             }
         }
     }
@@ -387,9 +426,18 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
     /**
      * Gets all the competitors for selection
      */
-    private class SelectCompetitorTask extends AsyncTask<Long, Void, List<Competitor>> {
-        private long nfcId;
-        private List<WjrCategory> categories;
+    private static class SelectCompetitorTask extends AsyncTask<Long, Void, List<Competitor>> {
+        private final WeakReference<Activity> weakActivity;
+        WjrDatabase database;
+        long nfcId;
+        int eventId;
+        List<WjrCategory> categories;
+
+        SelectCompetitorTask(Activity activity, WjrDatabase database, int eventId) {
+            weakActivity = new WeakReference<>(activity);
+            this.database = database;
+            this.eventId = eventId;
+        }
 
         @Override
         protected List<Competitor> doInBackground(Long... ids) {
@@ -400,11 +448,23 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
 
         @Override
         protected void onPostExecute(List<Competitor> competitors) {
-            LayoutInflater layoutInflaterAndroid = LayoutInflater.from(MainActivity.this);
+            // Re-acquire a strong reference to the activity, and verify
+            // that it still exists and is active.
+            Activity activity = weakActivity.get();
+            if (activity == null
+                    || activity.isFinishing()
+                    || activity.isDestroyed()) {
+                // activity is no longer valid, don't do anything!
+                return;
+            }
+
+            final MainActivity mainActivity = (MainActivity) weakActivity.get();
+
+            LayoutInflater layoutInflaterAndroid = LayoutInflater.from(mainActivity);
             View mView = layoutInflaterAndroid.inflate(R.layout.alert_select_person, null);
-            final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(MainActivity.this);
+            final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(mainActivity);
             alertDialogBuilder.setView(mView);
-            alertDialogBuilder.setNegativeButton(getText(R.string.cancel), new DialogInterface.OnClickListener() {
+            alertDialogBuilder.setNegativeButton(mainActivity.getText(R.string.cancel), new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
                     dialogInterface.cancel();
@@ -413,7 +473,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
             alertDialogBuilder.setOnCancelListener(new DialogInterface.OnCancelListener() {
                 @Override
                 public void onCancel(DialogInterface dialogInterface) {
-                    queuedSwipe = false;
+                    mainActivity.queuedSwipe = false;
                 }
             });
             final AlertDialog alertDialog = alertDialogBuilder.create();
@@ -422,15 +482,15 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
             addNewCompetitor.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    LayoutInflater layoutInflaterAndroid = LayoutInflater.from(MainActivity.this);
+                    LayoutInflater layoutInflaterAndroid = LayoutInflater.from(mainActivity);
                     View mView = layoutInflaterAndroid.inflate(R.layout.add_new_competitor_dialog, null);
-                    AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(MainActivity.this);
+                    AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(mainActivity);
                     alertDialogBuilder.setView(mView);
 
                     final EditText firstName = mView.findViewById(R.id.first_name_input);
                     final EditText lastName = mView.findViewById(R.id.last_name_input);
                     final Spinner spinner = mView.findViewById(R.id.new_person_category_spinner);
-                    ArrayAdapter<WjrCategory> catAdapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, categories);
+                    ArrayAdapter<WjrCategory> catAdapter = new ArrayAdapter<>(mainActivity, android.R.layout.simple_list_item_1, categories);
                     spinner.setAdapter(catAdapter);
                     alertDialogBuilder.setPositiveButton(R.string.add, new DialogInterface.OnClickListener() {
                         @Override
@@ -439,21 +499,14 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                             String lastNameString = lastName.getText().toString();
                             if (firstNameString.isEmpty() || lastNameString.isEmpty()) {
                                 // No name given, warn
-                                Toast.makeText(MainActivity.this, R.string.no_name, Toast.LENGTH_LONG).show();
+                                Toast.makeText(mainActivity, R.string.no_name, Toast.LENGTH_LONG).show();
                                 dialogInterface.cancel();
                             } else {
                                 Competitor competitor = new Competitor(eventId, firstName.getText().toString(), lastName.getText().toString());
                                 WjrCategory category = (WjrCategory) spinner.getSelectedItem();
                                 competitor.wjrCategoryId = category.wjrCategoryId;
                                 competitor.nfcTagId = nfcId;
-                                showStart(competitor);
-
-                                // Update start fragment if displayed
-                                if (currentFrame == FrameType.StartFrag) {
-                                    StartFragment fragment = (StartFragment) getSupportFragmentManager().findFragmentById(R.id.frame_fragmentholder);
-                                    if (fragment != null)
-                                        fragment.setupStartList();
-                                }
+                                mainActivity.showStart(competitor);
 
                                 dialogInterface.dismiss();
                                 alertDialog.dismiss();
@@ -467,7 +520,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                             }).show();
                 }
             });
-            final ArrayAdapter adapter = new ArrayAdapter<>(MainActivity.this,
+            final ArrayAdapter adapter = new ArrayAdapter<>(mainActivity,
                     android.R.layout.simple_list_item_1,
                     competitors);
             final ListView listView = mView.findViewById(R.id.competitor_list);
@@ -477,7 +530,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                     // Bring up start confirmation screen
                     Competitor competitor = (Competitor) adapterView.getItemAtPosition(i);
                     competitor.nfcTagId = nfcId;
-                    showStart(competitor);
+                    mainActivity.showStart(competitor);
                     alertDialog.dismiss();
                 }
             });
@@ -491,9 +544,11 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
      * Updates a competitor in the database
      */
     private static class UpdateCompetitorTask extends AsyncTask<Competitor, Void, Void> {
+        private final WeakReference<Activity> weakActivity;
         private WjrDatabase database;
 
-        UpdateCompetitorTask(WjrDatabase database) {
+        UpdateCompetitorTask(Activity activity, WjrDatabase database) {
+            weakActivity = new WeakReference<>(activity);
             this.database = database;
         }
 
@@ -508,82 +563,53 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
             }
             return null;
         }
+
+        @Override
+        protected void onPostExecute(Void v) {
+            // Re-acquire a strong reference to the activity, and verify
+            // that it still exists and is active.
+            Activity activity = weakActivity.get();
+            if (activity == null
+                    || activity.isFinishing()
+                    || activity.isDestroyed()) {
+                // activity is no longer valid, don't do anything!
+                return;
+            }
+
+            final MainActivity mainActivity = (MainActivity) weakActivity.get();
+            if (mainActivity.currentFrame == FrameType.FinishFrag) {
+                FinishFragment fragment = (FinishFragment) mainActivity.getSupportFragmentManager().findFragmentById(R.id.frame_fragmentholder);
+                if (fragment != null)
+                    fragment.setupResultList();
+            } else if (mainActivity.currentFrame == FrameType.StartFrag) {
+                StartFragment fragment = (StartFragment) mainActivity.getSupportFragmentManager().findFragmentById(R.id.frame_fragmentholder);
+                if (fragment != null)
+                    fragment.setupStartList();
+            }
+        }
     }
 
     // Called when competitor has finished
-    private void showFinish(final Competitor competitor) {
+    private void doFinish(final Competitor competitor) {
         competitor.endTime = System.currentTimeMillis() / 1000;
         competitor.status = Competitor.statusToInt("OK");
-        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(MainActivity.this);
-        alertDialogBuilder.setMessage(getString(R.string.confirm_finish_msg, competitor.toString()))
-                .setTitle(R.string.confirm_finish)
-                .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialogInterface, int which) {
-                        new UpdateCompetitorTask(database).execute(competitor);
-                        dialogInterface.dismiss();
-                        updateFinishFrag();
-                    }})
-                .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        dialogInterface.cancel();
-                    }
-                })
-                .setOnDismissListener(new DialogInterface.OnDismissListener() {
-                    @Override
-                    public void onDismiss(DialogInterface dialogInterface) {
-                        queuedSwipe = false;
-                    }
-                })
-                .show();
-    }
+        competitor.nfcTagId = -1;
+        new UpdateCompetitorTask(this, database).execute(competitor);
+        queuedSwipe = false;
 
-    // Called when competitor has already finished, but card is read in again
-    private void showFinishOverride(final Competitor competitor, boolean reassignable) {
-        final long newEndTime = System.currentTimeMillis() / 1000;
-
-        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(MainActivity.this);
-        if (reassignable) {
-            alertDialogBuilder.setNeutralButton(R.string.reassign_card, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialogInterface, int i) {
-                    // Change (old) competitor's NFC tag
-                    Competitor oldCompetitor = new Competitor(competitor);
-                    oldCompetitor.nfcTagId = -1;
-                    new UpdateCompetitorTask(database).execute(oldCompetitor);
-
-                    // Show competitor selector screen
-                    new SelectCompetitorTask().execute(competitor.nfcTagId, Long.valueOf(-1));
-                }
-            });
-        }
-        alertDialogBuilder.setMessage(getString(R.string.confirm_finish_replacement_msg, competitor.toString()))
-                .setTitle(R.string.confirm_finish)
-                .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialogInterface, int which) {
-                        competitor.endTime = newEndTime;
-                        competitor.status = Competitor.statusToInt("OK");
-                        new UpdateCompetitorTask(database).execute(competitor);
-                        dialogInterface.dismiss();
-                        updateFinishFrag();
-                    }})
-                .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        dialogInterface.cancel();
-                    }
-                })
-                .setOnDismissListener(new DialogInterface.OnDismissListener() {
-                    @Override
-                    public void onDismiss(DialogInterface dialogInterface) {
-                        queuedSwipe = false;
-                    }
-                })
-                .show();
+        final MediaPlayer player = MediaPlayer.create(this, R.raw.beep);
+        player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mediaPlayer) {
+                player.release();
+            }
+        });
+        player.start();
     }
 
     // Called to confirm start time
     private void showStart(final Competitor competitor) {
+        final Activity activity = this;
         AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(MainActivity.this);
         alertDialogBuilder.setTitle(R.string.confirm_start)
                 .setMessage(getString(R.string.confirm_start_msg,
@@ -592,9 +618,8 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                     public void onClick(DialogInterface dialogInterface, int which) {
                         competitor.startTime = System.currentTimeMillis() / 1000;
                         competitor.status = Competitor.statusToInt("DNF");
-                        new UpdateCompetitorTask(database).execute(competitor);
+                        new UpdateCompetitorTask(activity, database).execute(competitor);
                         dialogInterface.dismiss();
-                        updateFinishFrag();
                     }})
                 .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
                     @Override
@@ -609,14 +634,5 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                     }
                 })
                 .show();
-    }
-
-    // Updates the finish list if the finish fragment is displayed
-    private void updateFinishFrag() {
-        if (currentFrame == FrameType.FinishFrag) {
-            FinishFragment fragment = (FinishFragment) getSupportFragmentManager().findFragmentById(R.id.frame_fragmentholder);
-            if (fragment != null)
-                fragment.setupResultList();
-        }
     }
 }
