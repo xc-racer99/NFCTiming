@@ -40,6 +40,9 @@ public interface DaoAccess {
     @Query("SELECT * FROM Competitor WHERE wjrEventId = :wjrEventId ORDER BY endTime - startTime")
     List<Competitor> getCompetitorsByEventTimed(int wjrEventId);
 
+    @Query("SELECT * FROM Competitor WHERE wjrEventId = :wjrEventId ORDER BY wjrCategoryId, endTime - startTime")
+    List<Competitor> getCompetitorsByEventCategory(int wjrEventId);
+
     @Query("SELECT * FROM Competitor WHERE wjrEventId = :wjrEventId AND nfcTagId <= 0 ORDER BY LOWER(firstName)")
     List<Competitor> getUnstartedCompetitorsByEvent(int wjrEventId);
 

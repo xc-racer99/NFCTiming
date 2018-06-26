@@ -667,7 +667,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
             if (mainActivity.currentFrame == FrameType.FinishFrag) {
                 FinishFragment fragment = (FinishFragment) mainActivity.getSupportFragmentManager().findFragmentById(R.id.frame_fragmentholder);
                 if (fragment != null)
-                    fragment.setupResultList();
+                    fragment.refreshResultList();
             } else if (mainActivity.currentFrame == FrameType.StartFrag) {
                 StartFragment fragment = (StartFragment) mainActivity.getSupportFragmentManager().findFragmentById(R.id.frame_fragmentholder);
                 if (fragment != null)

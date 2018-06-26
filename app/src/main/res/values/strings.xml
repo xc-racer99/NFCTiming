@@ -66,6 +66,12 @@
     <string name="error_uploading">Encountered an error connecting to server\n\nAre you connected to the internet?</string>
     <string name="save_password">Save Password</string>
 
+    <string-array name="sorting_array">
+        <item>Sort by status</item>
+        <item>Sort by course</item>
+        <item>Sort by name</item>
+    </string-array>
+
     <!-- Common -->
     <string name="no_event">No Event Selected</string>
     <string name="ok">OK</string>

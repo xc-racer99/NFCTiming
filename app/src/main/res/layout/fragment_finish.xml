@@ -1,4 +1,4 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -12,19 +12,41 @@
         android:padding="5dp"
         android:text="@string/no_event"/>
 
+    <!-- Cool hack from https://stackoverflow.com/a/7784186 -->
+    <View android:id="@+id/strut"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_centerHorizontal="true"
+        android:visibility="invisible"/>
+
     <Button
         android:id="@+id/upload_results"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_below="@+id/event_title"
+        android:layout_alignEnd="@+id/strut"
+        android:layout_alignParentStart="true"
         android:padding="6dp"
         android:enabled="false"
         android:text="@string/upload_results" />
 
+    <Spinner
+        android:id="@+id/results_sort"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@+id/upload_results"
+        android:layout_alignBottom="@+id/upload_results"
+        android:layout_alignStart="@+id/strut"
+        android:layout_alignParentEnd="true">
+
+    </Spinner>
+
     <ListView
         android:id="@+id/results_listview"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/upload_results">
 
     </ListView>
 
-</LinearLayout>
+</RelativeLayout>

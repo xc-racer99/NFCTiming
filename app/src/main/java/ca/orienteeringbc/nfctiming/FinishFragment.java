@@ -9,13 +9,17 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Base64;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import java.io.File;
@@ -38,6 +42,11 @@ public class FinishFragment extends Fragment {
 
     // View created
     private View view;
+
+    // Sort types, must be synced with sort array strings
+    private static final int SORT_STATUS = 0;
+    private static final int SORT_CATEGORY = 1;
+    private static final int SORT_NAME = 2;
 
     public FinishFragment() {
         // Required empty public constructor
@@ -104,6 +113,24 @@ public class FinishFragment extends Fragment {
                     }).show();
                 }
             });
+
+            // Setup sort spinner
+            Spinner sortSpinner = view.findViewById(R.id.results_sort);
+            ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(getActivity(),
+                    R.array.sorting_array, android.R.layout.simple_spinner_item);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            sortSpinner.setAdapter(adapter);
+            sortSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                    setupResultList(i);
+                }
+
+                @Override
+                public void onNothingSelected(AdapterView<?> adapterView) {
+                    // Do nothing
+                }
+            });
         }
 
         return view;
@@ -115,15 +142,23 @@ public class FinishFragment extends Fragment {
 
         if (eventId > 0) {
             new SetupEventNameTask(getActivity(), database, eventId).execute();
-            setupResultList();
+            setupResultList(SORT_STATUS);
         }
     }
 
-    protected void setupResultList() {
-        new SetupResultListTask(getActivity(), database, eventId).execute();
+    /**
+     * Refreshes the results list based on current position of sort spinner
+     */
+    void refreshResultList() {
+        Spinner spinner = view.findViewById(R.id.results_sort);
+        setupResultList(spinner.getSelectedItemPosition());
     }
 
-    private static class SetupResultListTask extends AsyncTask<Void, Void, List<Competitor>> {
+    private void setupResultList(int sort) {
+        new SetupResultListTask(getActivity(), database, eventId).execute(sort);
+    }
+
+    private static class SetupResultListTask extends AsyncTask<Integer, Void, List<Competitor>> {
         private final WeakReference<Activity> weakActivity;
         private WjrDatabase database;
         private int eventId;
@@ -135,12 +170,26 @@ public class FinishFragment extends Fragment {
         }
 
         @Override
-        protected List<Competitor> doInBackground(Void... voids) {
+        protected List<Competitor> doInBackground(Integer... sort) {
+            switch (sort[0]) {
+                case SORT_STATUS:
+                    return database.daoAccess().getCompetitorsByEventTimed(eventId);
+                case SORT_NAME:
+                    return database.daoAccess().getCompetitorsByEventAlphabetically(eventId);
+                case SORT_CATEGORY:
+                    return database.daoAccess().getCompetitorsByEventCategory(eventId);
+                default:
+                    Log.e("Sort", "Unknown sort type, defaulting to by time");
+            }
             return database.daoAccess().getCompetitorsByEventTimed(eventId);
         }
 
         @Override
         protected void onPostExecute(List<Competitor> competitors) {
+            // Make sure we found some competitors
+            if (competitors == null)
+                return;
+
             // Re-acquire a strong reference to the activity, and verify
             // that it still exists and is active.
             final Activity activity = weakActivity.get();
