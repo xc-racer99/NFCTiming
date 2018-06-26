@@ -354,7 +354,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                 Log.d("HandleCompetitor", "Didn't find Competitor by NFC tag #");
                 // Try and get competitor (maybe multiple times) based on WJR ID
                 List<Competitor> thisCompetitors = database.daoAccess().getCompetitorsByWjrId(eventId, id[1].intValue());
-                if (thisCompetitors == null) {
+                if (thisCompetitors == null || thisCompetitors.size() == 0) {
                     Log.d("HandleCompetitor", "Didn't find Competitor by WJR ID");
                     // Assigned card, at start of first loop
                     WjrPerson person = database.daoAccess().getPersonById(id[1].intValue());
