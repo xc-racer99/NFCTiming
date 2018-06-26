@@ -27,9 +27,6 @@ public interface DaoAccess {
     @Update (onConflict = OnConflictStrategy.REPLACE)
     int updateCompetitor(Competitor... competitors);
 
-    @Update (onConflict = OnConflictStrategy.REPLACE)
-    int updateCompetitorList(List<Competitor> competitors);
-
     // Competitor access methods
     @Query("SELECT * FROM Competitor WHERE wjrEventId = :wjrEventId AND nfcTagId = :nfcTagId")
     Competitor getCompetitorByNfc(int wjrEventId, long nfcTagId);
@@ -66,9 +63,6 @@ public interface DaoAccess {
 
     // WjrEvent setter
     @Insert (onConflict = OnConflictStrategy.REPLACE)
-    void addEvent(WjrEvent event);
-
-    @Insert (onConflict = OnConflictStrategy.REPLACE)
     void addEventsList(List<WjrEvent> events);
 
     // WjrEvent queries
@@ -85,9 +79,6 @@ public interface DaoAccess {
     void deleteOldEvents(int wjrClubId, List<Integer> currentEvents);
 
     // WjrClub setter
-    @Insert (onConflict = OnConflictStrategy.REPLACE)
-    void addClub(WjrClub... clubs);
-
     @Insert (onConflict =  OnConflictStrategy.REPLACE)
     void addClubsList(List<WjrClub> clubs);
 
