@@ -51,9 +51,6 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
     public static final String WJR_PASSWORD = "WJR_PASSWORD";
     public static final String SAVE_WJR_CREDENTIALS = "WJR_SAVE";
 
-    // Database name
-    public static final String DATABASE_NAME = "wjr_database";
-
     // Mime type of assigned tags
     public static final String MIME_TEXT_PLAIN = "text/plain";
 
@@ -153,10 +150,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
         }
 
         // Initialize database
-        database = Room.databaseBuilder(getApplicationContext(), WjrDatabase.class, MainActivity.DATABASE_NAME)
-                .fallbackToDestructiveMigration()
-                .addMigrations(WjrDatabase.MIGRATION_1_2, WjrDatabase.MIGRATION_2_3, WjrDatabase.MIGRATION_3_4)
-                .build();
+        database = WjrDatabase.getInstance(this);
 
         // Initialize NFC PendingIntent
         mAdapter = NfcAdapter.getDefaultAdapter(this);

@@ -55,10 +55,7 @@ public class FinishFragment extends Fragment {
         final SharedPreferences sharedPrefs = getActivity().getPreferences(Context.MODE_PRIVATE);
 
         // Initialize database
-        database = Room.databaseBuilder(getActivity().getApplicationContext(), WjrDatabase.class, MainActivity.DATABASE_NAME)
-                .fallbackToDestructiveMigration()
-                .addMigrations(WjrDatabase.MIGRATION_1_2, WjrDatabase.MIGRATION_2_3, WjrDatabase.MIGRATION_3_4)
-                .build();
+        database = WjrDatabase.getInstance(getActivity());
 
         // Determine event ID
         eventId = sharedPrefs.getInt(MainActivity.SELECTED_EVENT_KEY, -1);

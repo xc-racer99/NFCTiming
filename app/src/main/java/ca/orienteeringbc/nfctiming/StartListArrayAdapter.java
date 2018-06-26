@@ -33,10 +33,7 @@ public class StartListArrayAdapter extends ArrayAdapter<Competitor> {
         this.categories = categories;
 
         // Initialize database
-        database = Room.databaseBuilder(context.getApplicationContext(), WjrDatabase.class, MainActivity.DATABASE_NAME)
-                .fallbackToDestructiveMigration()
-                .addMigrations(WjrDatabase.MIGRATION_1_2, WjrDatabase.MIGRATION_2_3, WjrDatabase.MIGRATION_3_4)
-                .build();
+        database = WjrDatabase.getInstance(context);
     }
 
     static class ViewHolder {

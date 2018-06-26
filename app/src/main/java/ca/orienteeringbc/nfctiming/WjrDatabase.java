@@ -2,8 +2,10 @@ package ca.orienteeringbc.nfctiming;
 
 import android.arch.persistence.db.SupportSQLiteDatabase;
 import android.arch.persistence.room.Database;
+import android.arch.persistence.room.Room;
 import android.arch.persistence.room.RoomDatabase;
 import android.arch.persistence.room.migration.Migration;
+import android.content.Context;
 
 /**
  * Created by jon on 14/03/18.
@@ -13,6 +15,21 @@ import android.arch.persistence.room.migration.Migration;
 @Database(entities = {Competitor.class, WjrCategory.class, WjrEvent.class, WjrClub.class, WjrPerson.class }, version = 4)
 public abstract class WjrDatabase extends RoomDatabase {
     public abstract DaoAccess daoAccess();
+
+    private static WjrDatabase INSTANCE;
+
+    public static WjrDatabase getInstance(Context context) {
+        if (INSTANCE == null) {
+            INSTANCE = Room.databaseBuilder(
+                    context.getApplicationContext(),
+                    WjrDatabase.class,
+                    "wjr_database")
+                    .addMigrations(WjrDatabase.MIGRATION_1_2, WjrDatabase.MIGRATION_2_3, WjrDatabase.MIGRATION_3_4)
+                    .build();
+        }
+
+        return INSTANCE;
+    }
 
     static final Migration MIGRATION_1_2 = new Migration(1, 2) {
         @Override
