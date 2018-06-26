@@ -1,0 +1,262 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 4,
+    "identityHash": "7b6e8fdab2c6d45345c3da54cb25b0d5",
+    "entities": [
+      {
+        "tableName": "Competitor",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`internalId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `wjrEventId` INTEGER NOT NULL, `wjrId` INTEGER NOT NULL, `nfcTagId` INTEGER NOT NULL, `firstName` TEXT, `lastName` TEXT, `wjrCategoryId` INTEGER NOT NULL, `startTime` INTEGER NOT NULL, `endTime` INTEGER NOT NULL, `status` INTEGER NOT NULL, FOREIGN KEY(`wjrEventId`) REFERENCES `WjrEvent`(`wjrId`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "fields": [
+          {
+            "fieldPath": "internalId",
+            "columnName": "internalId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wjrEventId",
+            "columnName": "wjrEventId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wjrId",
+            "columnName": "wjrId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nfcTagId",
+            "columnName": "nfcTagId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "firstName",
+            "columnName": "firstName",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "lastName",
+            "columnName": "lastName",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "wjrCategoryId",
+            "columnName": "wjrCategoryId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startTime",
+            "columnName": "startTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endTime",
+            "columnName": "endTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "internalId"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [
+          {
+            "name": "index_Competitor_firstName_lastName_wjrEventId_wjrId",
+            "unique": false,
+            "columnNames": [
+              "firstName",
+              "lastName",
+              "wjrEventId",
+              "wjrId"
+            ],
+            "createSql": "CREATE  INDEX `index_Competitor_firstName_lastName_wjrEventId_wjrId` ON `${TABLE_NAME}` (`firstName`, `lastName`, `wjrEventId`, `wjrId`)"
+          },
+          {
+            "name": "index_Competitor_wjrEventId",
+            "unique": false,
+            "columnNames": [
+              "wjrEventId"
+            ],
+            "createSql": "CREATE  INDEX `index_Competitor_wjrEventId` ON `${TABLE_NAME}` (`wjrEventId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "WjrEvent",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "wjrEventId"
+            ],
+            "referencedColumns": [
+              "wjrId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "WjrCategory",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`wjrCategoryId` INTEGER NOT NULL, `wjrEventId` INTEGER NOT NULL, `categoryName` TEXT, PRIMARY KEY(`wjrCategoryId`), FOREIGN KEY(`wjrEventId`) REFERENCES `WjrEvent`(`wjrId`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "fields": [
+          {
+            "fieldPath": "wjrCategoryId",
+            "columnName": "wjrCategoryId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wjrEventId",
+            "columnName": "wjrEventId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "categoryName",
+            "columnName": "categoryName",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "wjrCategoryId"
+          ],
+          "autoGenerate": false
+        },
+        "indices": [
+          {
+            "name": "index_WjrCategory_wjrEventId",
+            "unique": false,
+            "columnNames": [
+              "wjrEventId"
+            ],
+            "createSql": "CREATE  INDEX `index_WjrCategory_wjrEventId` ON `${TABLE_NAME}` (`wjrEventId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "WjrEvent",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "wjrEventId"
+            ],
+            "referencedColumns": [
+              "wjrId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "WjrEvent",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`wjrId` INTEGER NOT NULL, `wjrClubId` INTEGER NOT NULL, `eventName` TEXT, PRIMARY KEY(`wjrId`))",
+        "fields": [
+          {
+            "fieldPath": "wjrId",
+            "columnName": "wjrId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wjrClubId",
+            "columnName": "wjrClubId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "eventName",
+            "columnName": "eventName",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "wjrId"
+          ],
+          "autoGenerate": false
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "WjrClub",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`wjrId` INTEGER NOT NULL, `clubName` TEXT, PRIMARY KEY(`wjrId`))",
+        "fields": [
+          {
+            "fieldPath": "wjrId",
+            "columnName": "wjrId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "clubName",
+            "columnName": "clubName",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "wjrId"
+          ],
+          "autoGenerate": false
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "WjrPerson",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`wjrId` INTEGER NOT NULL, `firstName` TEXT, `lastName` TEXT, PRIMARY KEY(`wjrId`))",
+        "fields": [
+          {
+            "fieldPath": "wjrId",
+            "columnName": "wjrId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "firstName",
+            "columnName": "firstName",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "lastName",
+            "columnName": "lastName",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "wjrId"
+          ],
+          "autoGenerate": false
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, \"7b6e8fdab2c6d45345c3da54cb25b0d5\")"
+    ]
+  }
+}
