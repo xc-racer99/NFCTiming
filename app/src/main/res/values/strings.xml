@@ -37,6 +37,9 @@
     <string name="version_string">Version: %1$s</string>
     <string name="get_people">Update WJR Database</string>
     <string name="people_last_update">Last Updated %1$s</string>
+    <string name="updating_people">Updating WJR database, this can take up to 30s</string>
+    <string name="download_people_fail">Failed to download WJR database</string>
+    <string name="download_people_success">Success updating WJR database</string>
 
 
     <!-- Start List -->

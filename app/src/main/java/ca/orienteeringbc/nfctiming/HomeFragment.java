@@ -197,6 +197,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
                 break;
             case R.id.get_people:
                 Log.d(TAG, "Get people pushed");
+                Toast.makeText(getActivity(), R.string.updating_people, Toast.LENGTH_LONG).show();
                 new DownloadPeopleTask(getActivity(), database).execute();
                 break;
         }
@@ -417,8 +418,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
                 res = downloadPeople(database);
             } catch (XmlPullParserException e) {
                 Log.e("UpdatePeople", "Caught XmlPullParserException");
+                e.printStackTrace();
             } catch (IOException e) {
                 Log.e("UpdatePeople", "Caught IOException");
+                e.printStackTrace();
             }
             return res;
         }
@@ -437,15 +440,23 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
 
             // The activity is still valid
             MainActivity mainActivity = (MainActivity) weakActivity.get();
+
+            if (!success) {
+                Toast.makeText(mainActivity, R.string.download_people_fail, Toast.LENGTH_LONG).show();
+                return;
+            }
+            Toast.makeText(mainActivity, R.string.download_people_success, Toast.LENGTH_LONG).show();
+            SharedPreferences sharedPref = activity.getPreferences(Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = sharedPref.edit();
+            String update = java.text.DateFormat.getDateTimeInstance().format(Calendar.getInstance().getTime());
+            editor.putString(WJR_PEOPLE_LAST_UPDATED, update);
+            editor.apply();
+
             if (mainActivity.currentFrame == MainActivity.FrameType.HomeFrag) {
                 HomeFragment fragment = (HomeFragment) mainActivity.getSupportFragmentManager().findFragmentById(R.id.frame_fragmentholder);
 
                 // Update last updated time
-                String update = java.text.DateFormat.getDateTimeInstance().format(Calendar.getInstance().getTime());
                 fragment.peopleUpdated.setText(mainActivity.getString(R.string.people_last_update, update));
-                SharedPreferences.Editor editor = fragment.sharedPref.edit();
-                editor.putString(WJR_PEOPLE_LAST_UPDATED, update);
-                editor.apply();
             }
         }
     }
@@ -739,7 +750,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
     private static InputStream downloadUrl(String urlString) throws IOException {
         URL url = new URL(urlString);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setReadTimeout(10000 /* milliseconds */);
+        conn.setReadTimeout(25000 /* milliseconds */);
         conn.setConnectTimeout(15000 /* milliseconds */);
         conn.setRequestMethod("GET");
         conn.setDoInput(true);
