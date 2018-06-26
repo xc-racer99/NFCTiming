@@ -2,7 +2,6 @@ package ca.orienteeringbc.nfctiming;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.arch.persistence.room.Room;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
@@ -35,6 +34,7 @@ import java.util.List;
 
 import static ca.orienteeringbc.nfctiming.MainActivity.SELECTED_CLUB_KEY;
 import static ca.orienteeringbc.nfctiming.MainActivity.SELECTED_EVENT_KEY;
+import static ca.orienteeringbc.nfctiming.MainActivity.WJR_PEOPLE_LAST_UPDATED;
 
 
 /**
@@ -56,6 +56,9 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
     // Buttons
     private Button getCompetitors;
     private Button getEvents;
+
+    // Last time people DB updated
+    private TextView peopleUpdated;
 
     // The WJR id of the chosen club and event
     private int clubId = -1;
@@ -129,10 +132,12 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
         }
 
         // Set button listener
+        Button getPeople = view.findViewById(R.id.get_people);
         Button getClubs = view.findViewById(R.id.get_clubs);
         getEvents = view.findViewById(R.id.get_events);
         getCompetitors = view.findViewById(R.id.get_competitors);
 
+        getPeople.setOnClickListener(this);
         getClubs.setOnClickListener(this);
         getEvents.setOnClickListener(this);
         getCompetitors.setOnClickListener(this);
@@ -150,6 +155,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
         eventSpinner.setAdapter(eventAdapter);
         eventSpinner.setOnItemSelectedListener(this);
         eventId = sharedPref.getInt(SELECTED_EVENT_KEY, -1);
+
+        // Setup last updated time
+        peopleUpdated = view.findViewById(R.id.people_last_updated);
+        peopleUpdated.setText(getString(R.string.people_last_update, sharedPref.getString(WJR_PEOPLE_LAST_UPDATED, "Never")));
 
         // Fetch clubs/events from DB and setup spinners
         new InitialSpinnerSetupTask(getActivity(), database).execute(clubId);
@@ -185,6 +194,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
                     Log.e("Test", "Url is " + url);
                     new DownloadEntryListTask(getActivity(), database).execute(url);
                 }
+                break;
+            case R.id.get_people:
+                Log.d(TAG, "Get people pushed");
+                new DownloadPeopleTask(getActivity(), database).execute();
                 break;
         }
     }
@@ -387,6 +400,56 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
         }
     }
 
+    // Implementation of AsyncTask to download all People from WJR
+    private static class DownloadPeopleTask extends AsyncTask<Void, Void, Boolean> {
+        private final WeakReference<Activity> weakActivity;
+        private final WjrDatabase database;
+
+        DownloadPeopleTask(Activity activity, WjrDatabase database) {
+            weakActivity = new WeakReference<>(activity);
+            this.database = database;
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... voids) {
+            Boolean res = false;
+            try {
+                res = downloadPeople(database);
+            } catch (XmlPullParserException e) {
+                Log.e("UpdatePeople", "Caught XmlPullParserException");
+            } catch (IOException e) {
+                Log.e("UpdatePeople", "Caught IOException");
+            }
+            return res;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean success) {
+            // Re-acquire a strong reference to the activity, and verify
+            // that it still exists and is active.
+            Activity activity = weakActivity.get();
+            if (activity == null
+                    || activity.isFinishing()
+                    || activity.isDestroyed()) {
+                // activity is no longer valid, don't do anything!
+                return;
+            }
+
+            // The activity is still valid
+            MainActivity mainActivity = (MainActivity) weakActivity.get();
+            if (mainActivity.currentFrame == MainActivity.FrameType.HomeFrag) {
+                HomeFragment fragment = (HomeFragment) mainActivity.getSupportFragmentManager().findFragmentById(R.id.frame_fragmentholder);
+
+                // Update last updated time
+                String update = java.text.DateFormat.getDateTimeInstance().format(Calendar.getInstance().getTime());
+                fragment.peopleUpdated.setText(mainActivity.getString(R.string.people_last_update, update));
+                SharedPreferences.Editor editor = fragment.sharedPref.edit();
+                editor.putString(WJR_PEOPLE_LAST_UPDATED, update);
+                editor.apply();
+            }
+        }
+    }
+
     // Implementation of AsyncTask used to download XML from WJR for Clubs
     private static class DownloadClubTask extends AsyncTask<String, Void, List<WjrClub>> {
         private final WeakReference<Activity> weakActivity;
@@ -522,6 +585,29 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
                 Toast.makeText(activity.getApplicationContext(), R.string.entry_list_success, Toast.LENGTH_LONG).show();
             }
         }
+    }
+
+    private static Boolean downloadPeople(WjrDatabase database) throws XmlPullParserException, IOException {
+        InputStream stream = null;
+        List<WjrPerson> people;
+        WjrPersonParser xmlParser = new WjrPersonParser();
+
+        try {
+            stream = downloadUrl("https://whyjustrun.ca/iof/3.0/competitor_list.xml");
+            if (stream != null) {
+                people = xmlParser.parse(stream);
+
+                if (people.size() > 0) {
+                    database.daoAccess().deleteAllPeople();
+                    database.daoAccess().addPeopleList(people);
+                    return true;
+                }
+            }
+        } finally {
+            if (stream != null)
+                stream.close();
+        }
+        return false;
     }
 
     // Downloads club xml and saves to DB

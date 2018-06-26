@@ -3,7 +3,6 @@ package ca.orienteeringbc.nfctiming;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
-import android.arch.persistence.room.Room;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -50,6 +49,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
     public static final String WJR_USERNAME = "WJR_USERNAME";
     public static final String WJR_PASSWORD = "WJR_PASSWORD";
     public static final String SAVE_WJR_CREDENTIALS = "WJR_SAVE";
+    public static final String WJR_PEOPLE_LAST_UPDATED = "WJR_PEOPLE_UPDATE";
 
     // Mime type of assigned tags
     public static final String MIME_TEXT_PLAIN = "text/plain";
@@ -357,9 +357,18 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                 if (competitor == null) {
                     Log.d("HandleCompetitor", "Didn't find Competitor by WJR ID");
                     // Assigned card, at start of first loop
-                    // TODO Fetch WJR user database, match up name, return StartAssigned
-                    competitors = database.daoAccess().getUnstartedCompetitorsByEvent(eventId);
-                    ret = SwipeType.StartUnassigned;
+                    WjrPerson person = database.daoAccess().getPersonById(id[1].intValue());
+                    if (person == null) {
+                        Log.w("HandleCompetitor", "Didn't find WJR ID in DB");
+                        competitors = database.daoAccess().getUnstartedCompetitorsByEvent(eventId);
+                        ret = SwipeType.StartUnassigned;
+                    } else {
+                        competitor = new Competitor(eventId, person.firstName, person.lastName);
+                        competitor.nfcTagId = nfcId;
+                        competitor.wjrId = person.wjrId;
+                        competitor.wjrCategoryId = categories.get(0).wjrCategoryId;
+                        ret = SwipeType.StartAssigned;
+                    }
                 } else {
                     /* Assigned card, at start for next loop/course
                      * Create duplicate competitor with default start/finish times
@@ -613,7 +622,13 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
 
             // If we didn't change any, then we're trying to insert a new competitor, not update one
             if (ret == 0) {
-                Log.d("New Competitor", "Being added");
+                // Try and find a WJR ID, if necessary
+                if (competitors[0].wjrId <= 0) {
+                    WjrPerson person = database.daoAccess().getPersonByName(competitors[0].firstName, competitors[0].lastName);
+                    if (person != null)
+                        competitors[0].wjrId = person.wjrId;
+                }
+                Log.d("UpdateCompetitor", "Adding new competitor");
                 database.daoAccess().insertCompetitors(competitors[0]);
             }
             return null;

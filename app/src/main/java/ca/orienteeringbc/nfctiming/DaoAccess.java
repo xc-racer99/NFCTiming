@@ -97,9 +97,9 @@ public interface DaoAccess {
     @Query("DELETE FROM WjrPerson")
     void deleteAllPeople();
 
-    @Query("SELECT * FROM WjrPerson ORDER BY LOWER(lastName) ASC")
-    List<WjrPerson> getAllPeople();
-
     @Query("SELECT * FROM WjrPerson WHERE LOWER(lastName) = LOWER(:lastName) AND LOWER(firstName) = LOWER(:firstName)")
     WjrPerson getPersonByName(String firstName, String lastName);
+
+    @Query("SELECT * FROM WjrPerson WHERE wjrId = :wjrId")
+    WjrPerson getPersonById(int wjrId);
 }
