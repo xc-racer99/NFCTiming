@@ -67,6 +67,13 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
         FinishFrag,
     }
 
+    // To determine what card swipe result is
+    enum SwipeType {
+        StartAssigned,
+        StartUnassigned,
+        Finish,
+    }
+
     FrameType currentFrame = FrameType.HomeFrag;
 
     // NFC related vars
@@ -232,6 +239,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
 
     @Override
     public void onNewIntent(Intent intent) {
+        int wjrId = 0;
 
         if (eventId == -1) {
             Toast.makeText(this, R.string.no_event, Toast.LENGTH_LONG).show();
@@ -280,11 +288,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                             Log.d("Payload string is", string);
                             if (string.startsWith("WjrId:")) {
                                 // Remove WjrId: from start
-                                int wjrId = Integer.parseInt(string.substring(6));
-                                if (wjrId > 0) {
-                                    new CompetitorFromWjrIdTask(this, database, eventId).execute(Long.valueOf(wjrId), nfcId);
-                                    return;
-                                }
+                                wjrId = Integer.parseInt(string.substring(6));
                             }
                         } catch (UnsupportedEncodingException e) {
                             Log.e("TextEncoding Exception", e.toString());
@@ -293,8 +297,8 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                 }
             }
         }
-        // If we got here, then we didn't find an assigned card, use tag
-        new CompetitorFromNfcTagTask(this, database, eventId).execute(nfcId);
+        Log.d("NFC", "Tag # is " + nfcId + " WJR ID is " + wjrId);
+        new HandleCompetitorTask(this, database, eventId).execute(nfcId, Long.valueOf(wjrId));
     }
 
     private void addHomeFragment() {
@@ -327,127 +331,78 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
     }
 
     /**
-     *  Tries to find a Competitor by their NFC tag number (for non-assigned cards)
-     *  For pre-assigned cards, see @CompetitorFromWjrIdTask
+     *  Tries to find a Competitor by their NFC tag number
+     *  If it fails, tried to find via WjrId (if valid)
+     *  Shows select competitor, start, or finish depending on result of DB query
      */
-    private static class CompetitorFromNfcTagTask extends AsyncTask<Long, Void, Competitor> {
+    private static class HandleCompetitorTask extends AsyncTask<Long, Void, SwipeType> {
         private final WeakReference<Activity> weakActivity;
         WjrDatabase database;
         int eventId;
         long nfcId;
-
-        CompetitorFromNfcTagTask(Activity activity, WjrDatabase database, int eventId) {
-            weakActivity = new WeakReference<>(activity);
-            this.database = database;
-            this.eventId = eventId;
-        }
-
-        @Override
-        protected Competitor doInBackground(Long... id) {
-            nfcId = id[0];
-            return database.daoAccess().getCompetitorByNfc(eventId, id[0]);
-        }
-
-        @Override
-        protected void onPostExecute(Competitor competitor) {
-            // Re-acquire a strong reference to the activity, and verify
-            // that it still exists and is active.
-            Activity activity = weakActivity.get();
-            if (activity == null
-                    || activity.isFinishing()
-                    || activity.isDestroyed()) {
-                // activity is no longer valid, don't do anything!
-                return;
-            }
-
-            MainActivity mainActivity = (MainActivity) weakActivity.get();
-
-            if (competitor == null) {
-                // Un-assigned card, at the start
-                new SelectCompetitorTask(mainActivity, database, eventId).execute(nfcId, Long.valueOf(-1));
-            } else {
-                // Un-assigned card, at the finish
-                mainActivity.doFinish(competitor);
-            }
-        }
-    }
-
-    /**
-     * Tries to find a competitor by their wjrId number from their pre-assigned card
-     * For non-assigned cards, see @CompetitorFromNfcTagTask
-     */
-    private static class CompetitorFromWjrIdTask extends AsyncTask<Long, Void, Competitor> {
-        private final WeakReference<Activity> weakActivity;
-        WjrDatabase database;
-        int eventId;
-        long nfcId;
-        int wjrId;
-
-        CompetitorFromWjrIdTask(Activity activity, WjrDatabase database, int eventId) {
-            weakActivity = new WeakReference<>(activity);
-            this.database = database;
-            this.eventId = eventId;
-        }
-
-        @Override
-        protected Competitor doInBackground(Long... wjrId) {
-            this.wjrId = wjrId[0].intValue();
-            this.nfcId = wjrId[1];
-            return database.daoAccess().getCompetitorByWjrId(eventId, this.wjrId);
-        }
-
-        @Override
-        protected void onPostExecute(Competitor competitor) {
-            // Re-acquire a strong reference to the activity, and verify
-            // that it still exists and is active.
-            Activity activity = weakActivity.get();
-            if (activity == null
-                    || activity.isFinishing()
-                    || activity.isDestroyed()) {
-                // activity is no longer valid, don't do anything!
-                return;
-            }
-
-            MainActivity mainActivity = (MainActivity) weakActivity.get();
-
-            if (competitor == null) {
-                // Pre-assigned card, but didn't pre-register
-                new CompetitorFromNfcTagTask(mainActivity, database, eventId).execute(nfcId);
-            } else {
-                // Yay!  Pre-assigned card, pre-registered.  Now check if finished or not
-                if (competitor.startTime > 0)
-                        mainActivity.doFinish(competitor);
-                else
-                    mainActivity.showStart(competitor);
-            }
-        }
-    }
-
-    /**
-     * Gets all the competitors for selection
-     */
-    private static class SelectCompetitorTask extends AsyncTask<Long, Void, List<Competitor>> {
-        private final WeakReference<Activity> weakActivity;
-        WjrDatabase database;
-        long nfcId;
-        int eventId;
+        Competitor competitor;
         List<WjrCategory> categories;
+        List<Competitor> competitors = null;
 
-        SelectCompetitorTask(Activity activity, WjrDatabase database, int eventId) {
+        HandleCompetitorTask(Activity activity, WjrDatabase database, int eventId) {
             weakActivity = new WeakReference<>(activity);
             this.database = database;
             this.eventId = eventId;
         }
 
         @Override
-        protected List<Competitor> doInBackground(Long... ids) {
-            nfcId = ids[0];
+        protected SwipeType doInBackground(Long... id) {
+            SwipeType ret;
+            nfcId = id[0];
             categories = database.daoAccess().getCategoryById(eventId);
-            return database.daoAccess().getUnstartedCompetitorsByEvent(eventId);
+            competitor = database.daoAccess().getCompetitorByNfc(eventId, id[0]);
+            if (competitor == null && id[1] > 0) {
+                Log.d("HandleCompetitor", "Didn't find Competitor by NFC tag #");
+                // Try and get competitor based on WJR ID
+                competitor = database.daoAccess().getCompetitorByWjrId(eventId, id[1].intValue());
+                if (competitor == null) {
+                    Log.d("HandleCompetitor", "Didn't find Competitor by WJR ID");
+                    // Assigned card, at start of first loop
+                    // TODO Fetch WJR user database, match up name, return StartAssigned
+                    competitors = database.daoAccess().getUnstartedCompetitorsByEvent(eventId);
+                    ret = SwipeType.StartUnassigned;
+                } else {
+                    /* Assigned card, at start for next loop/course
+                     * Create duplicate competitor with default start/finish times
+                     */
+                    Log.d("HandleCompetitor", "Found competitor by WJR ID");
+
+                    Competitor oldCompetitor = new Competitor(competitor);
+                    competitor = new Competitor(eventId, oldCompetitor.firstName, oldCompetitor.lastName);
+                    competitor.nfcTagId = nfcId;
+                    if (oldCompetitor.wjrId > 0)
+                        competitor.wjrId = oldCompetitor.wjrId;
+                    // Set category to first one competitor hasn't run
+                    for (WjrCategory category : categories) {
+                        if (oldCompetitor.wjrCategoryId != category.wjrCategoryId) {
+                            competitor.wjrCategoryId = category.wjrCategoryId;
+                            break;
+                        }
+                    }
+                    // If we didn't find an unused category, use the first category
+                    if (competitor.wjrCategoryId < 0)
+                        competitor.wjrCategoryId = categories.get(0).wjrCategoryId;
+
+                    ret = SwipeType.StartAssigned;
+                }
+            } else if (competitor == null) {
+                competitors = database.daoAccess().getUnstartedCompetitorsByEvent(eventId);
+                ret = SwipeType.StartUnassigned;
+            } else {
+                // Found competitor's NFC, do finish
+                ret = SwipeType.Finish;
+            }
+
+            return ret;
         }
 
         @Override
-        protected void onPostExecute(List<Competitor> competitors) {
+        protected void onPostExecute(SwipeType swipeType) {
             // Re-acquire a strong reference to the activity, and verify
             // that it still exists and is active.
             Activity activity = weakActivity.get();
@@ -458,90 +413,167 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                 return;
             }
 
-            final MainActivity mainActivity = (MainActivity) weakActivity.get();
+            MainActivity mainActivity = (MainActivity) weakActivity.get();
 
-            LayoutInflater layoutInflaterAndroid = LayoutInflater.from(mainActivity);
-            View mView = layoutInflaterAndroid.inflate(R.layout.alert_select_person, null);
-            final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(mainActivity);
-            alertDialogBuilder.setView(mView);
-            alertDialogBuilder.setNegativeButton(mainActivity.getText(R.string.cancel), new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialogInterface, int i) {
-                    dialogInterface.cancel();
-                }
-            });
-            alertDialogBuilder.setOnCancelListener(new DialogInterface.OnCancelListener() {
-                @Override
-                public void onCancel(DialogInterface dialogInterface) {
-                    mainActivity.queuedSwipe = false;
-                }
-            });
-            final AlertDialog alertDialog = alertDialogBuilder.create();
-
-            Button addNewCompetitor = mView.findViewById(R.id.add_new_person);
-            addNewCompetitor.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    LayoutInflater layoutInflaterAndroid = LayoutInflater.from(mainActivity);
-                    View mView = layoutInflaterAndroid.inflate(R.layout.add_new_competitor_dialog, null);
-                    AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(mainActivity);
-                    alertDialogBuilder.setView(mView);
-
-                    final EditText firstName = mView.findViewById(R.id.first_name_input);
-                    final EditText lastName = mView.findViewById(R.id.last_name_input);
-                    final Spinner spinner = mView.findViewById(R.id.new_person_category_spinner);
-                    ArrayAdapter<WjrCategory> catAdapter = new ArrayAdapter<>(mainActivity, android.R.layout.simple_list_item_1, categories);
-                    spinner.setAdapter(catAdapter);
-                    alertDialogBuilder.setPositiveButton(R.string.add, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            String firstNameString = firstName.getText().toString();
-                            String lastNameString = lastName.getText().toString();
-                            if (firstNameString.isEmpty() || lastNameString.isEmpty()) {
-                                // No name given, warn
-                                Toast.makeText(mainActivity, R.string.no_name, Toast.LENGTH_LONG).show();
-                                dialogInterface.cancel();
-                            } else {
-                                Competitor competitor = new Competitor(eventId, firstName.getText().toString(), lastName.getText().toString());
-                                WjrCategory category = (WjrCategory) spinner.getSelectedItem();
-                                competitor.wjrCategoryId = category.wjrCategoryId;
-                                competitor.nfcTagId = nfcId;
-                                mainActivity.showStart(competitor);
-
-                                dialogInterface.dismiss();
-                                alertDialog.dismiss();
-                            }
-                        }
-                    }).setNegativeButton(R.string.cancel,
-                            new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialogBox, int id) {
-                                    dialogBox.cancel();
-                                }
-                            }).show();
-                }
-            });
-            final ArrayAdapter adapter = new ArrayAdapter<>(mainActivity,
-                    android.R.layout.simple_list_item_1,
-                    competitors);
-            final ListView listView = mView.findViewById(R.id.competitor_list);
-            listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                    // Bring up start confirmation screen
-                    Competitor competitor = (Competitor) adapterView.getItemAtPosition(i);
-                    competitor.nfcTagId = nfcId;
-                    mainActivity.showStart(competitor);
-                    alertDialog.dismiss();
-                }
-            });
-            listView.setAdapter(adapter);
-
-            alertDialog.show();
+            switch (swipeType) {
+                case StartAssigned:
+                    mainActivity.showStart(competitor, categories);
+                    break;
+                case StartUnassigned:
+                    mainActivity.selectCompetitor(nfcId, competitors, categories);
+                    break;
+                case Finish:
+                    mainActivity.doFinish(competitor);
+                    break;
+            }
         }
     }
 
     /**
-     * Updates a competitor in the database
+     * Creates an alert dialog for selection of person or creation of new person
+     * @param nfcId NFC ID of swiped card
+     * @param competitors List of all competitors not on course
+     * @param categories List of all categories in event
+     */
+    private void selectCompetitor(final long nfcId, final List<Competitor> competitors, final List<WjrCategory> categories) {
+        final MainActivity mainActivity = this;
+        LayoutInflater layoutInflaterAndroid = LayoutInflater.from(mainActivity);
+        View mView = layoutInflaterAndroid.inflate(R.layout.alert_select_person, null);
+        final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(mainActivity);
+        alertDialogBuilder.setView(mView);
+        alertDialogBuilder.setNegativeButton(mainActivity.getText(R.string.cancel), new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.cancel();
+            }
+        });
+        alertDialogBuilder.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialogInterface) {
+                mainActivity.queuedSwipe = false;
+            }
+        });
+        final AlertDialog alertDialog = alertDialogBuilder.create();
+
+        Button addNewCompetitor = mView.findViewById(R.id.add_new_person);
+        addNewCompetitor.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                LayoutInflater layoutInflaterAndroid = LayoutInflater.from(mainActivity);
+                View mView = layoutInflaterAndroid.inflate(R.layout.add_new_competitor_dialog, null);
+                AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(mainActivity);
+                alertDialogBuilder.setView(mView);
+
+                final EditText firstName = mView.findViewById(R.id.first_name_input);
+                final EditText lastName = mView.findViewById(R.id.last_name_input);
+                final Spinner spinner = mView.findViewById(R.id.new_person_category_spinner);
+                ArrayAdapter<WjrCategory> catAdapter = new ArrayAdapter<>(mainActivity, android.R.layout.simple_list_item_1, categories);
+                spinner.setAdapter(catAdapter);
+                alertDialogBuilder.setPositiveButton(R.string.add, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        String firstNameString = firstName.getText().toString();
+                        String lastNameString = lastName.getText().toString();
+                        if (firstNameString.isEmpty() || lastNameString.isEmpty()) {
+                            // No name given, warn
+                            Toast.makeText(mainActivity, R.string.no_name, Toast.LENGTH_LONG).show();
+                            dialogInterface.cancel();
+                        } else {
+                            Competitor competitor = new Competitor(eventId, firstName.getText().toString(), lastName.getText().toString());
+                            WjrCategory category = (WjrCategory) spinner.getSelectedItem();
+                            competitor.wjrCategoryId = category.wjrCategoryId;
+                            competitor.nfcTagId = nfcId;
+                            mainActivity.showStart(competitor, categories);
+
+                            dialogInterface.dismiss();
+                            alertDialog.dismiss();
+                        }
+                    }
+                }).setNegativeButton(R.string.cancel,
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialogBox, int id) {
+                                dialogBox.cancel();
+                            }
+                        }).show();
+            }
+        });
+        final ArrayAdapter adapter = new ArrayAdapter<>(mainActivity,
+                android.R.layout.simple_list_item_1,
+                competitors);
+        final ListView listView = mView.findViewById(R.id.competitor_list);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                // Bring up start confirmation screen
+                Competitor competitor = (Competitor) adapterView.getItemAtPosition(i);
+                competitor.nfcTagId = nfcId;
+                mainActivity.showStart(competitor, categories);
+                alertDialog.dismiss();
+            }
+        });
+        listView.setAdapter(adapter);
+
+        alertDialog.show();
+    }
+
+    /**
+     * Called to confirm someone's start and optionally change their category
+     * TODO: Allow picking of category here
+     * @param competitor Competitor containing NFC ID and optionally WJR ID
+     * @param categories List of all categories for the event
+     */
+    private void showStart(final Competitor competitor, List<WjrCategory> categories) {
+        final Activity activity = this;
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(MainActivity.this);
+        alertDialogBuilder.setTitle(R.string.confirm_start)
+                .setMessage(getString(R.string.confirm_start_msg,
+                        competitor.firstName + " " + competitor.lastName))
+                .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialogInterface, int which) {
+                        competitor.startTime = System.currentTimeMillis() / 1000;
+                        competitor.status = Competitor.statusToInt("DNF");
+                        new UpdateCompetitorTask(activity, database).execute(competitor);
+                        dialogInterface.dismiss();
+                    }})
+                .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.cancel();
+                    }
+                })
+                .setOnDismissListener(new DialogInterface.OnDismissListener() {
+                    @Override
+                    public void onDismiss(DialogInterface dialogInterface) {
+                        queuedSwipe = false;
+                    }
+                })
+                .show();
+    }
+
+    /**
+     * Called when a competitor has finished
+     * Plays a sound and saves the competitors time to DB
+     * @param competitor Competitor object containing all values except finish time
+     */
+    private void doFinish(final Competitor competitor) {
+        competitor.endTime = System.currentTimeMillis() / 1000;
+        competitor.status = Competitor.statusToInt("OK");
+        competitor.nfcTagId = -1;
+        new UpdateCompetitorTask(this, database).execute(competitor);
+        queuedSwipe = false;
+
+        final MediaPlayer player = MediaPlayer.create(this, R.raw.beep);
+        player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mediaPlayer) {
+                player.release();
+            }
+        });
+        player.start();
+    }
+
+    /**
+     * Updates a competitor in the database, adding it if needed
      */
     private static class UpdateCompetitorTask extends AsyncTask<Competitor, Void, Void> {
         private final WeakReference<Activity> weakActivity;
@@ -587,52 +619,5 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                     fragment.setupStartList();
             }
         }
-    }
-
-    // Called when competitor has finished
-    private void doFinish(final Competitor competitor) {
-        competitor.endTime = System.currentTimeMillis() / 1000;
-        competitor.status = Competitor.statusToInt("OK");
-        competitor.nfcTagId = -1;
-        new UpdateCompetitorTask(this, database).execute(competitor);
-        queuedSwipe = false;
-
-        final MediaPlayer player = MediaPlayer.create(this, R.raw.beep);
-        player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-            @Override
-            public void onCompletion(MediaPlayer mediaPlayer) {
-                player.release();
-            }
-        });
-        player.start();
-    }
-
-    // Called to confirm start time
-    private void showStart(final Competitor competitor) {
-        final Activity activity = this;
-        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(MainActivity.this);
-        alertDialogBuilder.setTitle(R.string.confirm_start)
-                .setMessage(getString(R.string.confirm_start_msg,
-                        competitor.firstName + " " + competitor.lastName))
-                .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialogInterface, int which) {
-                        competitor.startTime = System.currentTimeMillis() / 1000;
-                        competitor.status = Competitor.statusToInt("DNF");
-                        new UpdateCompetitorTask(activity, database).execute(competitor);
-                        dialogInterface.dismiss();
-                    }})
-                .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        dialogInterface.cancel();
-                    }
-                })
-                .setOnDismissListener(new DialogInterface.OnDismissListener() {
-                    @Override
-                    public void onDismiss(DialogInterface dialogInterface) {
-                        queuedSwipe = false;
-                    }
-                })
-                .show();
     }
 }
