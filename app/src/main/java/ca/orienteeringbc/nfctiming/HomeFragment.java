@@ -719,6 +719,11 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
         }
         
         if (info != null) {
+            // Remove previous event info
+            int eventId[] = new int[1];
+            eventId[0] = info.competitors.get(0).wjrEventId;
+            database.daoAccess().cleanupOldCompetitors(eventId);
+
             // Add info to DB
             database.daoAccess().addCategories(info.categories);
             database.daoAccess().insertCompetitorList(info.competitors);
