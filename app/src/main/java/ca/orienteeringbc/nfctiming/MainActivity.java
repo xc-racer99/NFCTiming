@@ -456,20 +456,21 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
         final MainActivity mainActivity = this;
         LayoutInflater layoutInflaterAndroid = LayoutInflater.from(mainActivity);
         View mView = layoutInflaterAndroid.inflate(R.layout.alert_select_person, null);
-        final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(mainActivity);
-        alertDialogBuilder.setView(mView);
-        alertDialogBuilder.setNegativeButton(mainActivity.getText(R.string.cancel), new DialogInterface.OnClickListener() {
+        final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(mainActivity)
+            .setView(mView)
+            .setNegativeButton(mainActivity.getText(R.string.cancel), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
                 dialogInterface.cancel();
-            }
-        });
-        alertDialogBuilder.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                }
+            })
+            .setOnCancelListener(new DialogInterface.OnCancelListener() {
             @Override
             public void onCancel(DialogInterface dialogInterface) {
                 mainActivity.queuedSwipe = false;
-            }
-        });
+                }
+            })
+            .setCancelable(false);
         final AlertDialog alertDialog = alertDialogBuilder.create();
 
         Button addNewCompetitor = mView.findViewById(R.id.add_new_person);
@@ -478,8 +479,9 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
             public void onClick(View view) {
                 LayoutInflater layoutInflaterAndroid = LayoutInflater.from(mainActivity);
                 View mView = layoutInflaterAndroid.inflate(R.layout.add_new_competitor_dialog, null);
-                AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(mainActivity);
-                alertDialogBuilder.setView(mView);
+                AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(mainActivity)
+                        .setView(mView)
+                        .setCancelable(false);
 
                 final EditText firstName = mView.findViewById(R.id.first_name_input);
                 final EditText lastName = mView.findViewById(R.id.last_name_input);
@@ -542,8 +544,9 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
         final MainActivity mainActivity = this;
         LayoutInflater layoutInflaterAndroid = LayoutInflater.from(mainActivity);
         View mView = layoutInflaterAndroid.inflate(R.layout.alert_confirm_start, null);
-        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(mainActivity);
-        alertDialogBuilder.setView(mView);
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(mainActivity)
+                .setView(mView)
+                .setCancelable(false);
 
         // Setup category spinner, hiding it if no category info supplied
         final Spinner catSpinner = mView.findViewById(R.id.cat_spinner);
