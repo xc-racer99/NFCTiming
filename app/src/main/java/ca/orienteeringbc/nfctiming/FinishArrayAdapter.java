@@ -1,7 +1,6 @@
 package ca.orienteeringbc.nfctiming;
 
 import android.app.Activity;
-import android.arch.persistence.room.Room;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import android.text.format.DateUtils;

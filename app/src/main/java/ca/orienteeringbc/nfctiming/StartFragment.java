@@ -3,7 +3,6 @@ package ca.orienteeringbc.nfctiming;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.arch.persistence.room.Room;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;

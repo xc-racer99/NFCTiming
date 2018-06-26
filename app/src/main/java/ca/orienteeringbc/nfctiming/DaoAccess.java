@@ -32,9 +32,6 @@ public interface DaoAccess {
     Competitor getCompetitorByNfc(int wjrEventId, long nfcTagId);
 
     @Query("SELECT * FROM Competitor WHERE wjrEventId = :wjrEventId AND wjrId = :wjrId")
-    Competitor getCompetitorByWjrId(int wjrEventId, int wjrId);
-
-    @Query("SELECT * FROM Competitor WHERE wjrEventId = :wjrEventId AND wjrId = :wjrId")
     List<Competitor> getCompetitorsByWjrId(int wjrEventId, int wjrId);
 
     @Query("SELECT * FROM Competitor WHERE wjrEventId = :wjrEventId ORDER BY LOWER(firstName)")

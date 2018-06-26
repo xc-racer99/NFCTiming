@@ -15,7 +15,7 @@ public class WjrClub {
 
     public String clubName;
 
-    public WjrClub(int wjrId, String clubName) {
+    WjrClub(int wjrId, String clubName) {
         this.wjrId = wjrId;
         this.clubName = clubName;
     }
