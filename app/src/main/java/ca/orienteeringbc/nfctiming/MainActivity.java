@@ -540,7 +540,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
      * @param competitor Competitor containing NFC ID and optionally WJR ID
      * @param categories List of all categories for the event
      */
-    private void showStart(final Competitor competitor, List<WjrCategory> categories) {
+    private void showStart(final Competitor competitor, final List<WjrCategory> categories) {
         final MainActivity mainActivity = this;
         LayoutInflater layoutInflaterAndroid = LayoutInflater.from(mainActivity);
         View mView = layoutInflaterAndroid.inflate(R.layout.alert_confirm_start, null);
@@ -563,8 +563,10 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                         competitor.firstName + " " + competitor.lastName))
                 .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialogInterface, int which) {
-                        WjrCategory category = (WjrCategory) catSpinner.getSelectedItem();
-                        competitor.wjrCategoryId = category.wjrCategoryId;
+                        if (categories != null) {
+                            WjrCategory category = (WjrCategory) catSpinner.getSelectedItem();
+                            competitor.wjrCategoryId = category.wjrCategoryId;
+                        }
                         competitor.startTime = System.currentTimeMillis() / 1000;
                         competitor.status = Competitor.statusToInt("DNF");
                         new UpdateCompetitorTask(mainActivity, database).execute(competitor);
