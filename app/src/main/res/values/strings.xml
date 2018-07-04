@@ -6,7 +6,7 @@
 
     <!-- Main Activity -->
     <string name="no_nfc">No NFC adapter detected</string>
-    <string name="no_nfc_limitations">No NFC on this device.  Will be limited to viewing start lists only.</string>
+    <string name="no_nfc_limitations">No NFC on this device nor is Tappy External NFC installed.\nWill be limited to viewing start lists only.</string>
     <string name="nfc_disabled">NFC is disabled.  Please enable it in Settings</string>
     <string name="confirm_start">Confirm Start</string>
     <string name="confirm_start_msg">Confirm start for %1$s</string>

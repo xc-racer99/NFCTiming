@@ -3,10 +3,13 @@ package ca.orienteeringbc.nfctiming;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.media.MediaPlayer;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
@@ -78,6 +81,9 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
     private PendingIntent mPendingIntent;
     private IntentFilter[] mFilters;
     private String[][] mTechLists;
+
+    // Tappy BLE external reader
+    private BroadcastReceiver receiver;
 
     // Database
     private WjrDatabase database;
@@ -155,13 +161,19 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
         // Initialize NFC PendingIntent
         mAdapter = NfcAdapter.getDefaultAdapter(this);
         if (mAdapter == null) {
-            // Warn about no NFC
-            new AlertDialog.Builder(this)
-                    .setCancelable(true)
-                    .setTitle(R.string.no_nfc)
-                    .setMessage(R.string.no_nfc_limitations)
-                    .setPositiveButton(R.string.ok, null)
-                    .show();
+            // Check if Tappy External NFC is installed
+            PackageManager pm = getApplicationContext().getPackageManager();
+            try {
+                pm.getPackageInfo("com.taptrack.roaring", 0);
+            } catch (PackageManager.NameNotFoundException e) {
+                // Warn about no NFC
+                new AlertDialog.Builder(this)
+                        .setCancelable(true)
+                        .setTitle(R.string.no_nfc)
+                        .setMessage(R.string.no_nfc_limitations)
+                        .setPositiveButton(R.string.ok, null)
+                        .show();
+            }
         } else {
             mPendingIntent = PendingIntent.getActivity(this, 0,
                     new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
@@ -184,6 +196,30 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                     NfcB.class.getName()
             } };
         }
+
+        // Register receivers for Tappy BLE unit
+        IntentFilter filter = new IntentFilter("com.taptrack.roaring.NDEF_FOUND");
+        filter.addAction("com.taptrack.roaring.TAG_FOUND");
+
+        receiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                onNewIntent(intent);
+            }
+        };
+
+        registerReceiver(receiver, filter);
+    }
+
+    @Override
+    public void onDestroy() {
+        // Unregister Tappy BLE receiver
+        if (receiver != null) {
+            unregisterReceiver(receiver);
+            receiver = null;
+        }
+
+        super.onDestroy();
     }
 
     @Override
@@ -246,13 +282,19 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
         else
             queuedSwipe = true;
 
+        // Get tag ID
+        long nfcId = 0;
         // Note, this is an attempt to convert the byte array into a long
         // BigInteger (which uses 2's complement), gives a different number
-        Tag t = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
-        byte[] id_array  = t.getId();
-        long nfcId = 0;
-        for (int i = 0; i < id_array.length; i++) {
-            nfcId += ((long) id_array[i] & 0xffL) << (8 * i);
+        byte[] id_array = intent.getByteArrayExtra(NfcAdapter.EXTRA_ID);
+        if (id_array != null) {
+            for (int i = 0; i < id_array.length; i++) {
+                nfcId += ((long) id_array[i] & 0xffL) << (8 * i);
+            }
+        } else {
+            queuedSwipe = false;
+            Toast.makeText(getApplicationContext(), "Unable to find an ID number", Toast.LENGTH_SHORT).show();
+            return;
         }
 
         // Fetch the tag from the intent
