@@ -198,8 +198,8 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
         }
 
         // Register receivers for Tappy BLE unit
-        IntentFilter filter = new IntentFilter("com.taptrack.roaring.NDEF_FOUND");
-        filter.addAction("com.taptrack.roaring.TAG_FOUND");
+        IntentFilter filter = new IntentFilter("com.taptrack.roaring.action.NDEF_FOUND");
+        filter.addAction("com.taptrack.roaring.action.TAG_FOUND");
 
         receiver = new BroadcastReceiver() {
             @Override
