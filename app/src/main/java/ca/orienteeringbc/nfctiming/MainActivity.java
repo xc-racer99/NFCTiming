@@ -196,30 +196,6 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                     NfcB.class.getName()
             } };
         }
-
-        // Register receivers for Tappy BLE unit
-        IntentFilter filter = new IntentFilter("com.taptrack.roaring.action.NDEF_FOUND");
-        filter.addAction("com.taptrack.roaring.action.TAG_FOUND");
-
-        receiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                onNewIntent(intent);
-            }
-        };
-
-        registerReceiver(receiver, filter);
-    }
-
-    @Override
-    public void onDestroy() {
-        // Unregister Tappy BLE receiver
-        if (receiver != null) {
-            unregisterReceiver(receiver);
-            receiver = null;
-        }
-
-        super.onDestroy();
     }
 
     @Override
@@ -248,6 +224,19 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
 
             mAdapter.enableForegroundDispatch(this, mPendingIntent, mFilters, mTechLists);
         }
+
+        // Register receivers for Tappy BLE unit
+        IntentFilter filter = new IntentFilter("com.taptrack.roaring.action.NDEF_FOUND");
+        filter.addAction("com.taptrack.roaring.action.TAG_FOUND");
+
+        receiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                onNewIntent(intent);
+            }
+        };
+
+        registerReceiver(receiver, filter);
     }
 
     @Override
@@ -264,6 +253,11 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
 
         if (mAdapter != null) {
             mAdapter.disableForegroundDispatch(this);
+        }
+
+        if (receiver != null) {
+            unregisterReceiver(receiver);
+            receiver = null;
         }
     }
 
