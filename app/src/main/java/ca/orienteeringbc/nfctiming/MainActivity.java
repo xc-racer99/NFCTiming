@@ -3,8 +3,6 @@ package ca.orienteeringbc.nfctiming;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -14,7 +12,6 @@ import android.media.MediaPlayer;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
-import android.nfc.Tag;
 import android.nfc.tech.NfcA;
 import android.nfc.tech.NfcB;
 import android.nfc.tech.NfcF;
@@ -82,9 +79,6 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
     private IntentFilter[] mFilters;
     private String[][] mTechLists;
 
-    // Tappy BLE external reader
-    private BroadcastReceiver receiver;
-
     // Database
     private WjrDatabase database;
 
@@ -150,6 +144,11 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                         break;
                 }
             }
+
+            // Check if opening due to NFC Intent
+            Intent intent = getIntent();
+            if (intent != null && intent.getByteArrayExtra(NfcAdapter.EXTRA_ID) != null)
+                onNewIntent(intent);
         } else {
             // Initialize to home view
             addHomeFragment();
@@ -224,19 +223,6 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
 
             mAdapter.enableForegroundDispatch(this, mPendingIntent, mFilters, mTechLists);
         }
-
-        // Register receivers for Tappy BLE unit
-        IntentFilter filter = new IntentFilter("com.taptrack.roaring.action.NDEF_FOUND");
-        filter.addAction("com.taptrack.roaring.action.TAG_FOUND");
-
-        receiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                onNewIntent(intent);
-            }
-        };
-
-        registerReceiver(receiver, filter);
     }
 
     @Override
@@ -253,11 +239,6 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
 
         if (mAdapter != null) {
             mAdapter.disableForegroundDispatch(this);
-        }
-
-        if (receiver != null) {
-            unregisterReceiver(receiver);
-            receiver = null;
         }
     }
 
