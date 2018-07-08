@@ -287,6 +287,18 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
         // Note, this is an attempt to convert the byte array into a long
         // BigInteger (which uses 2's complement), gives a different number
         byte[] id_array = intent.getByteArrayExtra(NfcAdapter.EXTRA_ID);
+
+        // Not actually used in production, but for testing via ADB where
+        // byte arrays can't be sent
+        if (id_array == null) {
+            int[] int_id_array = intent.getIntArrayExtra(NfcAdapter.EXTRA_ID);
+            if (int_id_array != null) {
+                id_array = new byte[int_id_array.length];
+                for (int i = 0; i < id_array.length; i++)
+                    id_array[i] = (byte) int_id_array[i];
+            }
+        }
+
         if (id_array != null) {
             for (int i = 0; i < id_array.length; i++) {
                 nfcId += ((long) id_array[i] & 0xffL) << (8 * i);
