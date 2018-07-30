@@ -159,6 +159,7 @@ public class FinishFragment extends Fragment {
     }
 
     private static class SetupResultListTask extends AsyncTask<Integer, Void, List<Competitor>> {
+        private List<WjrCategory> categoryList;
         private final WeakReference<Activity> weakActivity;
         private WjrDatabase database;
         private int eventId;
@@ -171,6 +172,8 @@ public class FinishFragment extends Fragment {
 
         @Override
         protected List<Competitor> doInBackground(Integer... sort) {
+            categoryList = database.daoAccess().getCategoryById(eventId);
+
             switch (sort[0]) {
                 case SORT_STATUS:
                     return database.daoAccess().getCompetitorsByEventTimed(eventId);
@@ -205,7 +208,7 @@ public class FinishFragment extends Fragment {
             if (mainActivity.currentFrame == MainActivity.FrameType.FinishFrag) {
                 FinishFragment fragment = (FinishFragment) mainActivity.getSupportFragmentManager().findFragmentById(R.id.frame_fragmentholder);
                 ListView listView = fragment.view.findViewById(R.id.results_listview);
-                FinishArrayAdapter adapter = new FinishArrayAdapter(activity, competitors);
+                FinishArrayAdapter adapter = new FinishArrayAdapter(activity, competitors, categoryList);
                 listView.setAdapter(adapter);
             }
         }

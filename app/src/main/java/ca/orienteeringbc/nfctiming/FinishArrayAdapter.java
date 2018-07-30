@@ -22,13 +22,15 @@ import java.util.List;
 
 public class FinishArrayAdapter extends ArrayAdapter<Competitor> {
     private final List<Competitor> competitorList;
+    private final List<WjrCategory> categoryList;
     private final Activity context;
     private final WjrDatabase database;
 
 
-    FinishArrayAdapter(Activity context, List<Competitor> competitorList) {
+    FinishArrayAdapter(Activity context, List<Competitor> competitorList, List<WjrCategory> categoryList) {
         super(context, R.layout.list_result, competitorList);
         this.competitorList = competitorList;
+        this.categoryList = categoryList;
         this.context = context;
 
         // Initialize database
@@ -37,8 +39,23 @@ public class FinishArrayAdapter extends ArrayAdapter<Competitor> {
 
     static class ViewHolder {
         TextView nameHolder;
+        TextView catHolder;
         TextView statusHolder;
         Spinner spinner;
+    }
+
+    /**
+     * Determine category name from ID
+     * @param catId Desired category id
+     * @return Category name corresponding to catId
+     */
+    private String getCategoryName(int catId)
+    {
+        for (WjrCategory category : categoryList) {
+            if (category.wjrCategoryId == catId)
+                return category.categoryName;
+        }
+        return null;
     }
 
     @Override
@@ -52,6 +69,7 @@ public class FinishArrayAdapter extends ArrayAdapter<Competitor> {
             final FinishArrayAdapter.ViewHolder viewHolder = new FinishArrayAdapter.ViewHolder();
             viewHolder.nameHolder = view.findViewById(R.id.name_field);
             viewHolder.statusHolder = view.findViewById(R.id.status_field);
+            viewHolder.catHolder = view.findViewById(R.id.cat_field);
             viewHolder.spinner = view.findViewById(R.id.status_spinner);
             ArrayAdapter<String> statusAdapter = new ArrayAdapter<>(context, android.R.layout.simple_list_item_1, Competitor.statuses);
             viewHolder.spinner.setAdapter(statusAdapter);
@@ -79,6 +97,7 @@ public class FinishArrayAdapter extends ArrayAdapter<Competitor> {
         ViewHolder holder = (ViewHolder) view.getTag();
         holder.spinner.setTag(competitorList.get(position));
         holder.nameHolder.setText(competitor.toString());
+        holder.catHolder.setText(getCategoryName(competitor.wjrCategoryId));
 
         // Select proper status
         if (competitor.status == 0)
