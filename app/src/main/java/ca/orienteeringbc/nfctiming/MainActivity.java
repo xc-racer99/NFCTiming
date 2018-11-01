@@ -85,7 +85,8 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
     // Event Id
     private int eventId;
 
-    // Timestamp of last swipe
+    // For duplicate/pending swipe filtering
+    private boolean queuedSwipe = false;
     private long lastSwipe = 0;
 
     @Override
@@ -252,10 +253,12 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
         }
 
         // Skip if last swipe was within 1.5s
-        if (lastSwipe + 1500 > System.currentTimeMillis())
+        if (queuedSwipe || lastSwipe + 1500 > System.currentTimeMillis()) {
             return;
-        else
+        } else {
             lastSwipe = System.currentTimeMillis();
+            queuedSwipe = true;
+        }
 
         // Get tag ID
         long nfcId = 0;
@@ -279,6 +282,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                 nfcId += ((long) id_array[i] & 0xffL) << (8 * i);
             }
         } else {
+            queuedSwipe = false;
             Toast.makeText(getApplicationContext(), "Unable to find an ID number", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -495,7 +499,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
             .setOnCancelListener(new DialogInterface.OnCancelListener() {
             @Override
             public void onCancel(DialogInterface dialogInterface) {
-                // Nothing needed
+                    mainActivity.queuedSwipe = false;
                 }
             })
             .setCancelable(false);
@@ -609,7 +613,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                 .setOnDismissListener(new DialogInterface.OnDismissListener() {
                     @Override
                     public void onDismiss(DialogInterface dialogInterface) {
-                        // Nothing needed
+                        queuedSwipe = false;
                     }
                 })
                 .show();
@@ -625,6 +629,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
         competitor.status = Competitor.statusToInt("OK");
         competitor.nfcTagId = -1;
         new UpdateCompetitorTask(this, database).execute(competitor);
+        queuedSwipe = false;
 
         final MediaPlayer player = MediaPlayer.create(this, R.raw.beep);
         player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
