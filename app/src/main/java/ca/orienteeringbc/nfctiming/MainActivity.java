@@ -393,52 +393,21 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                     if (person == null) {
                         Log.w("HandleCompetitor", "Didn't find WJR ID in DB");
                         competitors = database.daoAccess().getUnstartedCompetitorsByEvent(eventId);
-                        ret = SwipeType.StartUnassigned;
-                    } else {
-                        competitor = new Competitor(eventId, person.firstName, person.lastName);
-                        competitor.nfcTagId = nfcId;
-                        competitor.wjrId = person.wjrId;
-                        competitor.wjrCategoryId = categories.get(0).wjrCategoryId;
-                        ret = SwipeType.StartAssigned;
+                        return SwipeType.StartUnassigned;
                     }
+                    competitor = new Competitor(eventId, person.firstName, person.lastName);
                 } else {
-                    Log.d("HandleCompetitor", "Found " + thisCompetitors.size() + " competitor(s) by WJR ID");
-
                     if (thisCompetitors.get(0).endTime > 0) {
                         Log.d("HandleCompetitor", "Found pre-registered, assigned card at 2+ start");
-                        /* Assigned card, at start for next loop/course
-                         * Create duplicate competitor with default start/finish times
-                         */
                         competitor = new Competitor(eventId, thisCompetitors.get(0).firstName, thisCompetitors.get(0).lastName);
-                        competitor.nfcTagId = nfcId;
-                        if (thisCompetitors.get(0).wjrId > 0)
-                            competitor.wjrId = thisCompetitors.get(0).wjrId;
-                        // Set category to first one competitor hasn't run
-                        for (WjrCategory category : categories) {
-                            boolean found = true;
-                            for (Competitor comp : thisCompetitors) {
-                                if (comp.wjrCategoryId == category.wjrCategoryId) {
-                                    found = false;
-                                    break;
-                                }
-                            }
-
-                            if (found) {
-                                competitor.wjrCategoryId = category.wjrCategoryId;
-                                break;
-                            }
-                        }
-                        // If we didn't find an unused category, use the first category
-                        if (competitor.wjrCategoryId < 0)
-                            competitor.wjrCategoryId = categories.get(0).wjrCategoryId;
                     } else {
                         Log.d("HandleCompetitor", "Found pre-registered, assigned card at first start");
                         competitor = thisCompetitors.get(0);
-                        competitor.nfcTagId = nfcId;
                     }
-
-                    ret = SwipeType.StartAssigned;
                 }
+                competitor.wjrId = id[1].intValue();
+                competitor.nfcTagId = nfcId;
+                ret = SwipeType.StartAssigned;
             } else if (competitor == null) {
                 competitors = database.daoAccess().getUnstartedCompetitorsByEvent(eventId);
                 ret = SwipeType.StartUnassigned;
@@ -557,6 +526,11 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 // Bring up start confirmation screen
                 Competitor competitor = (Competitor) adapterView.getItemAtPosition(i);
+
+                // Check for multiple courses and make copy if needed
+                if (competitor.endTime > 0)
+                    competitor = new Competitor(eventId, competitor.firstName, competitor.lastName);
+
                 competitor.nfcTagId = nfcId;
                 mainActivity.showStart(competitor, categories);
                 alertDialog.dismiss();
