@@ -48,7 +48,7 @@ import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements HomeFragment.OnEventIdChangeListener {
+public class MainActivity extends AppCompatActivity implements HomeFragment.OnEventIdChangeListener, LocalHomeFragment.OnEventIdChangeListener {
 
     // Shared prefs keys
     public static final String SELECTED_CLUB_KEY = "SELECTED_WJR_CLUB";
@@ -57,6 +57,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
     public static final String WJR_PASSWORD = "WJR_PASSWORD";
     public static final String SAVE_WJR_CREDENTIALS = "WJR_SAVE";
     public static final String WJR_PEOPLE_LAST_UPDATED = "WJR_PEOPLE_UPDATE";
+    public static final String APP_MODE_WJR = "APP_MODE_WJR";
 
     // Mime type of assigned tags
     public static final String MIME_TEXT_PLAIN = "text/plain";
@@ -111,6 +112,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
         // Determine eventId
         SharedPreferences preferences = getPreferences(MODE_PRIVATE);
         eventId = preferences.getInt(SELECTED_EVENT_KEY, -1);
+        currentMode = preferences.getBoolean(APP_MODE_WJR,true) ? EventType.WjrEvent : EventType.LocalEvent;
 
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_nav);
         bottomNavigationView.setOnNavigationItemSelectedListener(
@@ -317,6 +319,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
 
                                 eventId = -1;
                                 editor.putInt(SELECTED_EVENT_KEY, eventId);
+                                editor.putBoolean(APP_MODE_WJR, currentMode == EventType.WjrEvent);
                                 editor.apply();
                                 addHomeFragment();
                                 currentFrame = FrameType.HomeFrag;

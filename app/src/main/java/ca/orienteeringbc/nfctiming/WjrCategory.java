@@ -15,6 +15,7 @@ import android.arch.persistence.room.PrimaryKey;
         indices = {@Index({"wjrEventId"})})
 public class WjrCategory {
     @PrimaryKey
+    /* Use WJR category IDs for WJR events, INT_MAX and descending for local events */
     public int wjrCategoryId;
 
     public int wjrEventId;

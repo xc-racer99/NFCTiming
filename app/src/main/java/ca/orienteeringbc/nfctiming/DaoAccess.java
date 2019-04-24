@@ -53,9 +53,12 @@ public interface DaoAccess {
     @Query("DELETE FROM Competitor WHERE wjrEventId IN (:oldEvents)")
     void cleanupOldCompetitors(int[] oldEvents);
 
-    // WjrCategory setter
+    // WjrCategory setters
     @Insert (onConflict = OnConflictStrategy.REPLACE)
     void addCategories(List<WjrCategory> categoryList);
+
+    @Insert (onConflict = OnConflictStrategy.REPLACE)
+    void addCategory(WjrCategory category);
 
     // WjrCategory queries
     @Query("SELECT * FROM WjrCategory WHERE wjrEventId = :wjrEventId")
@@ -64,9 +67,12 @@ public interface DaoAccess {
    @Query("DELETE FROM WjrCategory WHERE wjrEventId IN (:oldEvents)")
    void cleanupOldCategories(int[] oldEvents);
 
-    // WjrEvent setter
+    // WjrEvent setters
     @Insert (onConflict = OnConflictStrategy.REPLACE)
     void addEventsList(List<WjrEvent> events);
+
+    @Insert (onConflict = OnConflictStrategy.REPLACE)
+    void addEvent(WjrEvent event);
 
     // WjrEvent queries
     @Query("SELECT eventName FROM WjrEvent WHERE wjrId = :wjrEventId")

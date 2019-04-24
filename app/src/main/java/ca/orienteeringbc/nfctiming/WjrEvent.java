@@ -11,8 +11,10 @@ import android.arch.persistence.room.PrimaryKey;
 @Entity
 public class WjrEvent {
     @PrimaryKey
+    /* Use WJR numbering for WJR events, INT_MAX and descending for local events */
     public int wjrId;
 
+    /* Will be -1 for "Local" events */
     public int wjrClubId;
 
     public String eventName;
