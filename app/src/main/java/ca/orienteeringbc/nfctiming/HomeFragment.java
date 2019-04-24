@@ -366,6 +366,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
             editor.putInt(SELECTED_EVENT_KEY, eventId);
             editor.apply();
 
+            // Callback to parent activity
+            if (mCallback != null)
+                mCallback.onEventIdChange(eventId);
+
             // Disable get events
             getEvents.setEnabled(false);
         } else {
@@ -390,6 +394,10 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
             SharedPreferences.Editor editor = sharedPref.edit();
             editor.putInt(SELECTED_EVENT_KEY, eventId);
             editor.apply();
+
+            // Callback to parent activity
+            if (mCallback != null)
+                mCallback.onEventIdChange(eventId);
 
             // Disable download event data button
             getCompetitors.setEnabled(false);

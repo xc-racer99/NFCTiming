@@ -9,6 +9,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
@@ -26,6 +27,7 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
@@ -36,6 +38,10 @@ import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
@@ -69,6 +75,12 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
         StartAssigned,
         StartUnassigned,
         Finish,
+    }
+
+    // If we are a local event or WJR event
+    enum EventType {
+        WjrEvent,
+        LocalEvent,
     }
 
     FrameType currentFrame = FrameType.HomeFrag;
@@ -240,6 +252,102 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
 
         if (mAdapter != null) {
             mAdapter.disableForegroundDispatch(this);
+        }
+    }
+
+    /**
+     * Set the main menu, either in the three dots or via menu key
+     * @param menu - Menu passed
+     * @return - Unconditionally true
+     */
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main_menu, menu);
+        return true;
+    }
+
+    /**
+     * Setup main menu, enabled/disabling the Share IOF XML when
+     * event is selected/not selected
+     * @param menu - Menu to adjust
+     * @return - true unconditionally
+     */
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        if (eventId != -1) {
+            MenuItem share = menu.findItem(R.id.main_menu_share_results);
+            share.setEnabled(true);
+        }
+
+        return true;
+    }
+
+    /**
+     * Main listener for menu options
+     *  - Start ShareIntent if share IOF xml
+     *  - Switch between local-only and WJR modes
+     * @param item - Selected item
+     * @return - true if handled, false otherwise
+     */
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.main_menu_share_results:
+            new ShareXmlTask(this, database, eventId).execute();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private static class ShareXmlTask extends AsyncTask<Void, Void, Boolean> {
+        private final WeakReference<Activity> weakActivity;
+        WjrDatabase database;
+        int eventId;
+        File mFile;
+
+        ShareXmlTask(Activity activity, WjrDatabase database, int eventId) {
+            weakActivity = new WeakReference<>(activity);
+            mFile = new File(activity.getExternalFilesDir(null), eventId + ".xml");
+            this.database = database;
+            this.eventId = eventId;
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... voids) {
+            try {
+                OutputStream fileOut = new FileOutputStream(mFile);
+
+                // Save a copy to SD card
+                new UploadResultsXml().makeXml(fileOut, database, eventId, false);
+            } catch (IOException exception) {
+                // Oops, just return
+                Log.e("NFCTiming", "Failed to write to storage, can't save");
+                return Boolean.FALSE;
+            }
+
+            return Boolean.TRUE;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean res) {
+            // Re-acquire a strong reference to the activity, and verify
+            // that it still exists and is active.
+            Activity activity = weakActivity.get();
+            if (activity == null
+                    || activity.isFinishing()
+                    || activity.isDestroyed()) {
+                // activity is no longer valid, don't do anything!
+                return;
+            }
+
+            if (res) {
+                Intent sharingIntent = new Intent(android.content.Intent.ACTION_SEND);
+                Uri shareUri = Uri.fromFile(mFile);
+                sharingIntent.setType("text/xml");
+                sharingIntent.putExtra(Intent.EXTRA_STREAM, shareUri);
+
+                activity.startActivity(Intent.createChooser(sharingIntent, activity.getString(R.string.share_xml_via)));
+            }
         }
     }
 

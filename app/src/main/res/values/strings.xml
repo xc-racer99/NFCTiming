@@ -4,6 +4,11 @@
     <string name="start">Start List</string>
     <string name="finish">Results</string>
 
+    <!-- Three dots menu -->
+    <string name="event_mode">Event Mode</string>
+    <string name="share_results">Send IOF XML</string>
+    <string name="share_xml_via">Send IOF XML via</string>
+
     <!-- Main Activity -->
     <string name="no_nfc">No NFC adapter detected</string>
     <string name="no_nfc_limitations">No NFC on this device nor is Tappy External NFC installed.\nWill be limited to viewing start lists only.</string>
