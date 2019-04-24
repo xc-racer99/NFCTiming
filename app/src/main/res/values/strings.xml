@@ -55,6 +55,10 @@
     <string name="download_people_fail">Failed to download WJR database</string>
     <string name="download_people_success">Success updating WJR database</string>
 
+    <!-- Local Home Fragment -->
+    <string name="import_from_file">Import From IOF XML</string>
+    <string name="create_new_event">Add New Event</string>
+    <string name="create_category">Add Category</string>
 
     <!-- Start List -->
     <string name="add_new">Add New Competitor</string>

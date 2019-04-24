@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/container_scroll_view"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="5dp">
+
+        <TextView android:id="@+id/version"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="5dp"/>
+
+        <Button android:id="@+id/import_from_xml"
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:text="@string/import_from_file"/>
+
+        <Button android:id="@+id/add_new_event"
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/import_from_xml"
+            android:text="@string/create_new_event"/>
+
+        <!-- Cool hack from https://stackoverflow.com/a/7784186 -->
+        <View android:id="@+id/strut"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_centerHorizontal="true"
+            android:visibility="invisible"/>
+
+        <TextView
+            android:id="@+id/local_event_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_alignEnd="@+id/strut"
+            android:layout_alignParentStart="true"
+            android:layout_alignTop="@+id/local_event_spinner"
+            android:layout_alignBottom="@+id/local_event_spinner"
+            android:gravity="center_vertical"
+            android:text="@string/event"/>
+
+        <Spinner
+            android:id="@+id/local_event_spinner"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_alignStart="@+id/strut"
+            android:layout_alignParentEnd="true"
+            android:layout_below="@+id/add_new_event">
+
+        </Spinner>
+
+        <Button
+            android:id="@+id/add_category"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/local_event_spinner"
+            android:layout_centerHorizontal="true"
+            android:text="@string/create_category"/>
+
+
+        <!-- In horizontal view, the bottom of a button was cutoff -->
+        <View android:id="@+id/bottom_spacer"
+            android:layout_width="match_parent"
+            android:layout_height="20dp"
+            android:layout_below="@id/get_people"
+            android:visibility="invisible"/>
+
+    </RelativeLayout>
+</ScrollView>

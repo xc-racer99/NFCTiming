@@ -3,6 +3,7 @@ package ca.orienteeringbc.nfctiming;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -280,6 +281,11 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
             share.setEnabled(true);
         }
 
+        if (currentFrame == FrameType.HomeFrag) {
+            MenuItem mode = menu.findItem(R.id.main_menu_event_mode);
+            mode.setEnabled(true);
+        }
+
         return true;
     }
 
@@ -302,7 +308,20 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
                 final int currentModeIndex = currentMode == EventType.WjrEvent ? 0 : 1;
                 final AlertDialog.Builder confirmBuilder = new AlertDialog.Builder(this)
                         .setTitle(R.string.switch_mode)
-                        .setPositiveButton(R.string.ok, null)
+                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                // Refresh and go to home fragment regardless
+                                SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
+                                SharedPreferences.Editor editor = sharedPref.edit();
+
+                                eventId = -1;
+                                editor.putInt(SELECTED_EVENT_KEY, eventId);
+                                editor.apply();
+                                addHomeFragment();
+                                currentFrame = FrameType.HomeFrag;
+                            }
+                        })
                         .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {

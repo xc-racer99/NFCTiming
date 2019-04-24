@@ -9,5 +9,6 @@
     <item
         android:id="@+id/main_menu_event_mode"
         android:orderInCategory="200"
-        android:title="@string/event_mode" />
+        android:title="@string/event_mode"
+        android:enabled="false"/>
 </menu>
