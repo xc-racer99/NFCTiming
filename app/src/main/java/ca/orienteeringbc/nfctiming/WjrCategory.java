@@ -19,7 +19,7 @@ public class WjrCategory {
 
     public int wjrEventId;
 
-    public String categoryName;
+    String categoryName;
 
     public WjrCategory(int wjrCategoryId, int wjrEventId, String categoryName) {
         this.wjrCategoryId = wjrCategoryId;

@@ -32,12 +32,12 @@ import java.util.List;
  * Given an InputStream representation of a feed, it returns a List of entries,
  * where each list element represents a single entry (post) in the XML feed.
  */
-public class WjrEventParser {
+class WjrEventParser {
     private static final String ns = null;
 
     // We don't use namespaces
 
-    public List<WjrEvent> parse(InputStream in) throws XmlPullParserException, IOException {
+    List<WjrEvent> parse(InputStream in) throws XmlPullParserException, IOException {
         try {
             XmlPullParser parser = Xml.newPullParser();
             parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);

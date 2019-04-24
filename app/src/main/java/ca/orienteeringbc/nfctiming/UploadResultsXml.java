@@ -13,11 +13,11 @@ import java.util.List;
  * Reads values from database and uploads xml
  */
 
-public class UploadResultsXml {
+class UploadResultsXml {
     // No namespace needed
     private static final String ns = null;
 
-    public boolean makeXml(OutputStream outputStream, WjrDatabase database, int eventId, boolean preRegistered) throws IOException {
+    void makeXml(OutputStream outputStream, WjrDatabase database, int eventId, boolean preRegistered) throws IOException {
         XmlSerializer serializer = Xml.newSerializer();
 
         List<WjrCategory> categories = database.daoAccess().getCategoryById(eventId);
@@ -72,7 +72,6 @@ public class UploadResultsXml {
         } finally {
             outputStream.close();
         }
-        return true;
     }
 
     private void writeClass(XmlSerializer serializer, WjrCategory category) throws IOException {

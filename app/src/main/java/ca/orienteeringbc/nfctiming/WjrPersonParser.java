@@ -29,13 +29,13 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-public class WjrPersonParser {
+class WjrPersonParser {
     // We don't use namespaces
     private static final String ns = null;
 
     private List<WjrPerson> competitors;
 
-    public List<WjrPerson> parse(InputStream in) throws XmlPullParserException, IOException {
+    List<WjrPerson> parse(InputStream in) throws XmlPullParserException, IOException {
         if (in == null)
             return null;
 

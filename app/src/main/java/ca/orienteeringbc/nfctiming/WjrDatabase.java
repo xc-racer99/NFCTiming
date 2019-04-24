@@ -18,7 +18,7 @@ public abstract class WjrDatabase extends RoomDatabase {
 
     private static WjrDatabase INSTANCE;
 
-    public static WjrDatabase getInstance(Context context) {
+    static WjrDatabase getInstance(Context context) {
         if (INSTANCE == null) {
             INSTANCE = Room.databaseBuilder(
                     context.getApplicationContext(),

@@ -26,7 +26,7 @@ import org.xmlpull.v1.XmlPullParserException;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class WjrCompetitorParser {
+class WjrCompetitorParser {
     private static final String ns = null;
 
     // We don't use namespaces
@@ -36,7 +36,7 @@ public class WjrCompetitorParser {
     private int clubId = -1;
     private String eventName;
 
-    public HomeFragment.EventInfo parse(InputStream in) throws XmlPullParserException, IOException {
+    HomeFragment.EventInfo parse(InputStream in) throws XmlPullParserException, IOException {
         eventInfo = new HomeFragment.EventInfo();
         try {
             XmlPullParser parser = Xml.newPullParser();
