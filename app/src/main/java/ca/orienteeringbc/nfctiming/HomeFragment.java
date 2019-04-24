@@ -62,7 +62,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
 
     // The WJR id of the chosen club and event
     private int clubId = -1;
-    private int eventId = -1;
+    private int eventId;
 
     // SharedPrefs
     private SharedPreferences sharedPref;
@@ -118,6 +118,8 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
         // Initialize sharedPrefs
         sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
 
+        eventId = getArguments().getInt(MainActivity.SELECTED_EVENT_KEY);
+
         // Initialize DB
         database = WjrDatabase.getInstance(getActivity());
 
@@ -154,7 +156,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Adap
         eventAdapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_list_item_1, mEventList);
         eventSpinner.setAdapter(eventAdapter);
         eventSpinner.setOnItemSelectedListener(this);
-        eventId = sharedPref.getInt(SELECTED_EVENT_KEY, -1);
 
         // Setup last updated time
         peopleUpdated = view.findViewById(R.id.people_last_updated);

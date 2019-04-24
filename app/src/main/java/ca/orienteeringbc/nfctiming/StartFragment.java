@@ -3,9 +3,7 @@ package ca.orienteeringbc.nfctiming;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.DialogInterface;
-import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -39,23 +37,16 @@ public class StartFragment extends Fragment {
     // The fragment's view
     private View view;
 
-    public StartFragment() {
-        // Required empty public constructor
-    }
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         view = inflater.inflate(R.layout.fragment_start, container, false);
 
-        // Initialize shared prefs
-        SharedPreferences sharedPrefs = getActivity().getPreferences(Context.MODE_PRIVATE);
-
         // Initialize database
         database = WjrDatabase.getInstance(getActivity());
 
-        eventId = sharedPrefs.getInt(MainActivity.SELECTED_EVENT_KEY, -1);
+        eventId = getArguments().getInt(MainActivity.SELECTED_EVENT_KEY);
 
         return view;
     }

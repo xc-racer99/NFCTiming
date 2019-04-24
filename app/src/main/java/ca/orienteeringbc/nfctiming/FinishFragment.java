@@ -48,10 +48,6 @@ public class FinishFragment extends Fragment {
     private static final int SORT_CATEGORY = 1;
     private static final int SORT_NAME = 2;
 
-    public FinishFragment() {
-        // Required empty public constructor
-    }
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -64,8 +60,7 @@ public class FinishFragment extends Fragment {
         // Initialize database
         database = WjrDatabase.getInstance(getActivity());
 
-        // Determine event ID
-        eventId = sharedPrefs.getInt(MainActivity.SELECTED_EVENT_KEY, -1);
+        eventId = getArguments().getInt(MainActivity.SELECTED_EVENT_KEY);
 
         if (eventId > 0) {
             Button uploadResults = view.findViewById(R.id.upload_results);

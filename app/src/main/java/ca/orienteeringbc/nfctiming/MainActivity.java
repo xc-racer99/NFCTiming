@@ -490,15 +490,28 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
     }
 
     private void addHomeFragment() {
-        HomeFragment frag = new HomeFragment();
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        transaction.replace(R.id.frame_fragmentholder, frag);
+        Bundle bundle = new Bundle();
+        bundle.putInt(SELECTED_EVENT_KEY, eventId);
+
+        if (currentMode.equals(EventType.WjrEvent)) {
+            HomeFragment frag = new HomeFragment();
+            frag.setArguments(bundle);
+            transaction.replace(R.id.frame_fragmentholder, frag);
+        } else {
+            LocalHomeFragment frag = new LocalHomeFragment();
+            frag.setArguments(bundle);
+            transaction.replace(R.id.frame_fragmentholder, frag);
+        }
 
         transaction.commitNow();
     }
 
     private void addStartFragment() {
+        Bundle bundle = new Bundle();
+        bundle.putInt(SELECTED_EVENT_KEY, eventId);
         StartFragment frag = new StartFragment();
+        frag.setArguments(bundle);
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.frame_fragmentholder, frag);
 
@@ -506,7 +519,10 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
     }
 
     private void addFinishFragment() {
+        Bundle bundle = new Bundle();
+        bundle.putInt(SELECTED_EVENT_KEY, eventId);
         FinishFragment frag = new FinishFragment();
+        frag.setArguments(bundle);
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.frame_fragmentholder, frag);
 
