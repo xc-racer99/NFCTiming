@@ -9,6 +9,15 @@
     <string name="share_results">Send IOF XML</string>
     <string name="share_xml_via">Send IOF XML via</string>
 
+    <!-- Switching modes -->
+    <string name="switch_mode">Switch Mode</string>
+    <string name="wjr_mode_description">WhyJustRun mode integrates with the WJR sites and can upload results but events must be created on the WJR server first.</string>
+    <string name="local_mode_description">Local mode allows you to create new events but doesn\'t allow you to upload results, although they can still be exported.</string>
+    <string-array name="app_modes">
+        <item>WhyJustRun</item>
+        <item>Local Only</item>
+    </string-array>
+
     <!-- Main Activity -->
     <string name="no_nfc">No NFC adapter detected</string>
     <string name="no_nfc_limitations">No NFC on this device nor is Tappy External NFC installed.\nWill be limited to viewing start lists only.</string>

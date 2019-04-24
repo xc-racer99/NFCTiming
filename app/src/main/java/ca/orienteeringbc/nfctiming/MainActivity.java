@@ -84,6 +84,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
     }
 
     FrameType currentFrame = FrameType.HomeFrag;
+    EventType currentMode = EventType.WjrEvent;
 
     // NFC related vars
     private NfcAdapter mAdapter;
@@ -292,9 +293,62 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.main_menu_share_results:
-            new ShareXmlTask(this, database, eventId).execute();
-            return true;
+            case R.id.main_menu_share_results: {
+                new ShareXmlTask(this, database, eventId).execute();
+                return true;
+            }
+            case R.id.main_menu_event_mode: {
+                final EventType oldMode = currentMode;
+                final int currentModeIndex = currentMode == EventType.WjrEvent ? 0 : 1;
+                final AlertDialog.Builder confirmBuilder = new AlertDialog.Builder(this)
+                        .setTitle(R.string.switch_mode)
+                        .setPositiveButton(R.string.ok, null)
+                        .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                currentMode = oldMode;
+                            }
+                        })
+                        .setOnCancelListener(new DialogInterface.OnCancelListener() {
+                            @Override
+                            public void onCancel(DialogInterface dialogInterface) {
+                                currentMode = oldMode;
+                            }
+                        });
+
+                final AlertDialog dialog = new AlertDialog.Builder(this)
+                        .setTitle(R.string.switch_mode)
+                        .setSingleChoiceItems(R.array.app_modes, currentModeIndex, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                if (i == 0)
+                                    currentMode = EventType.WjrEvent;
+                                else
+                                    currentMode = EventType.LocalEvent;
+                            }
+                        })
+                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                int stringResource;
+
+                                if (currentMode.equals(oldMode))
+                                    return;
+
+                                if (currentMode.equals(EventType.WjrEvent)) {
+                                    stringResource = R.string.wjr_mode_description;
+                                } else {
+                                    stringResource = R.string.local_mode_description;
+                                }
+
+                                confirmBuilder.setMessage(stringResource);
+                                confirmBuilder.show();
+                            }
+                        })
+                        .create();
+                dialog.show();
+                return true;
+            }
         }
         return super.onOptionsItemSelected(item);
     }
