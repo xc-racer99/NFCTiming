@@ -25,6 +25,7 @@ import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -418,9 +419,10 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
 
             if (res) {
                 Intent sharingIntent = new Intent(android.content.Intent.ACTION_SEND);
-                Uri shareUri = Uri.fromFile(mFile);
+                Uri shareUri = FileProvider.getUriForFile(activity.getApplicationContext(), "ca.orienteeringbc.nfctiming.provider", mFile);
                 sharingIntent.setType("text/xml");
                 sharingIntent.putExtra(Intent.EXTRA_STREAM, shareUri);
+                sharingIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
                 activity.startActivity(Intent.createChooser(sharingIntent, activity.getString(R.string.share_xml_via)));
             }
