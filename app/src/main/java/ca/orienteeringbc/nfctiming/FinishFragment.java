@@ -51,16 +51,26 @@ public class FinishFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        final SharedPreferences sharedPrefs;
+        MainActivity.EventType eventType;
+
         // Inflate the layout for this fragment
         view = inflater.inflate(R.layout.fragment_finish, container, false);
 
         // Initialize shared prefs
-        final SharedPreferences sharedPrefs = getActivity().getPreferences(Context.MODE_PRIVATE);
+        sharedPrefs = getActivity().getPreferences(Context.MODE_PRIVATE);
 
         // Initialize database
         database = WjrDatabase.getInstance(getActivity());
 
+        eventType = (MainActivity.EventType) getArguments().getSerializable(MainActivity.APP_MODE_WJR);
+
         eventId = getArguments().getInt(MainActivity.SELECTED_EVENT_KEY);
+
+        if (eventType != null && eventType.equals(MainActivity.EventType.LocalEvent)) {
+            Button uploadResults = view.findViewById(R.id.upload_results);
+            uploadResults.setVisibility(View.INVISIBLE);
+        }
 
         if (eventId > 0) {
             Button uploadResults = view.findViewById(R.id.upload_results);

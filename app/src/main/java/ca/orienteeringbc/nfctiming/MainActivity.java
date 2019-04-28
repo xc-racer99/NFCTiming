@@ -63,7 +63,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
     // Mime type of assigned tags
     public static final String MIME_TEXT_PLAIN = "text/plain";
 
-    // Saved frame in bundle
+    // Saved in bundles
     private static final String STATE_CURRENT_FRAME = "currentFrame";
 
     // Counter to determine if we should reload the frame or not
@@ -545,6 +545,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.OnEv
     private void addFinishFragment() {
         Bundle bundle = new Bundle();
         bundle.putInt(SELECTED_EVENT_KEY, eventId);
+        bundle.putSerializable(APP_MODE_WJR, currentMode);
         FinishFragment frag = new FinishFragment();
         frag.setArguments(bundle);
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
